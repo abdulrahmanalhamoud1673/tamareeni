@@ -1,42 +1,42 @@
-/* ===== التمارين: الاسم بالعربي، الاسم الإنجليزي (كما هو مكتوب على الماكينة)، ومقدار الزيادة ===== */
+/* ===== التمارين: الاسم بالعربي، والاسم الإنجليزي كما كتبته أنت في جدولك ===== */
 const EX = {
-  incline_bar_press: { ar: 'ضغط بار مائل', en: 'Incline Barbell Bench Press', inc: 2.5 },
-  cable_press:       { ar: 'ضغط كيبل', en: 'Cable Chest Press', inc: 2.5 },
-  cable_fly:         { ar: 'تفتيح كيبل', en: 'Cable Crossover / Fly', inc: 2.5 },
-  decline_bar_press: { ar: 'ضغط بار منحدر', en: 'Decline Barbell Bench Press', inc: 2.5 },
-  dips:              { ar: 'متوازي', en: 'Dips (Chest)', inc: 2.5 },
-  flat_db_press:     { ar: 'ضغط دمبل مستوي', en: 'Flat Dumbbell Bench Press', inc: 2 },
-  single_arm_oh_ext: { ar: 'تمديد ترايسبس فوق الرأس', en: 'Standing One-Arm Dumbbell Triceps Extension', inc: 1 },
-  rope_pushdown:     { ar: 'سحب حبل ترايسبس', en: 'Triceps Pushdown (Rope)', inc: 1 },
-  tri_ext_machine:   { ar: 'جهاز الترايسبس', en: 'Machine Triceps Extension', inc: 2.5 },
+  incline_bar_press: { ar: 'ضغط بار مائل', en: 'Incline bar press', inc: 2.5 },
+  cable_press:       { ar: 'ضغط كيبل', en: 'Cable press', inc: 2.5 },
+  cable_fly:         { ar: 'تفتيح كيبل', en: 'Cable fly', inc: 2.5 },
+  decline_bar_press: { ar: 'ضغط بار منحدر', en: 'Decline bar press', inc: 2.5 },
+  dips:              { ar: 'متوازي', en: 'Dips', inc: 2.5 },
+  flat_db_press:     { ar: 'ضغط دمبل مستوي', en: 'Flat db press', inc: 2 },
+  single_arm_oh_ext: { ar: 'تمديد ترايسبس بذراع واحدة', en: 'Single arm over head', inc: 1 },
+  rope_pushdown:     { ar: 'سحب حبل ترايسبس', en: 'Rope push down', inc: 1 },
+  tri_ext_machine:   { ar: 'جهاز الترايسبس', en: 'Tri ext mach', inc: 2.5 },
 
-  lat_pulldown:      { ar: 'سحب أمامي عالي', en: 'Wide-Grip Lat Pulldown', inc: 1 },
-  low_row_cable:     { ar: 'تجديف كيبل منخفض', en: 'Seated Cable Row', inc: 1 },
-  row_hammer_high:   { ar: 'تجديف هامر قبضة عالية', en: 'Leverage High Row', inc: 2.5 },
-  high_row_cable:    { ar: 'تجديف كيبل عالي', en: 'High Cable Row', inc: 2.5 },
-  reverse_fly:       { ar: 'تفتيح خلفي', en: 'Reverse Machine Fly', inc: 1 },
-  hyper_ext:         { ar: 'تمديد أسفل الظهر', en: 'Hyperextension / Back Extension', inc: 2.5 },
-  trx_row:           { ar: 'تجديف TRX', en: 'Inverted Row with Straps', bw: true },
+  lat_pulldown:      { ar: 'سحب أمامي عالي', en: 'Lat pull down', inc: 1 },
+  low_row_cable:     { ar: 'تجديف كيبل منخفض', en: 'Low row cable (N)', inc: 1 },
+  row_hammer_high:   { ar: 'تجديف هامر قبضة عالية', en: 'Row hammer strength high grip', inc: 2.5 },
+  high_row_cable:    { ar: 'تجديف كيبل عالي', en: 'High row cable', inc: 2.5 },
+  reverse_fly:       { ar: 'تفتيح خلفي', en: 'Reverse fly (traps)', inc: 1 },
+  hyper_ext:         { ar: 'تمديد أسفل الظهر', en: 'Hyper ext', inc: 2.5 },
+  trx_row:           { ar: 'تجديف TRX', en: 'TRX', bw: true },
 
-  lateral_raise:     { ar: 'رفرفة جانبية', en: 'Side Lateral Raise', inc: 1 },
-  shoulder_press_ham:{ ar: 'ضغط كتف هامر', en: 'Leverage Shoulder Press', inc: 2.5 },
-  upright_row:       { ar: 'تجديف عمودي', en: 'Upright Barbell Row', inc: 2.5 },
-  shoulder_press_n:  { ar: 'ضغط كتف قبضة محايدة', en: 'Dumbbell Shoulder Press', inc: 2 },
-  shrugs:            { ar: 'هز الأكتاف', en: 'Barbell Shrug', inc: 2.5 },
-  alt_curl_15:       { ar: 'مرجحة تبادل', en: 'Alternate Dumbbell Biceps Curl', inc: 1 },
-  cable_curl:        { ar: 'مرجحة كيبل', en: 'Standing Biceps Cable Curl', inc: 1 },
-  hammer_curl:       { ar: 'مرجحة مطرقة', en: 'Hammer Curls', inc: 1 },
+  lateral_raise:     { ar: 'رفرفة جانبية', en: 'Lateral raises', inc: 1 },
+  shoulder_press_ham:{ ar: 'ضغط كتف هامر', en: 'Shoulder press hammer strength', inc: 2.5 },
+  upright_row:       { ar: 'تجديف عمودي', en: 'Upright row', inc: 2.5 },
+  shoulder_press_n:  { ar: 'ضغط كتف قبضة محايدة', en: 'Shoulder press (N)', inc: 2 },
+  shrugs:            { ar: 'هز الأكتاف', en: 'Shrugs', inc: 2.5 },
+  alt_curl_15:       { ar: 'مرجحة تبادل', en: 'Alt arm curl 1.5', inc: 1 },
+  cable_curl:        { ar: 'مرجحة كيبل', en: 'Cable arm curl', inc: 1 },
+  hammer_curl:       { ar: 'مرجحة مطرقة', en: 'Hammer', inc: 1 },
 
-  squat:             { ar: 'سكوات', en: 'Barbell Full Squat', inc: 5 },
-  lunges:            { ar: 'طعنات', en: 'Walking Lunge', bw: true },
-  leg_ext:           { ar: 'تمديد الأرجل', en: 'Leg Extension', inc: 2.5 },
-  leg_curl:          { ar: 'ثني الأرجل', en: 'Seated Leg Curl', inc: 2.5 },
-  abd_add:           { ar: 'تبعيد وتقريب الأفخاذ', en: 'Thigh Abductor / Adductor', inc: 5,
+  squat:             { ar: 'سكوات', en: 'Squat', inc: 5 },
+  lunges:            { ar: 'طعنات', en: 'Lunges', bw: true },
+  leg_ext:           { ar: 'تمديد الأرجل', en: 'Leg ext', inc: 2.5 },
+  leg_curl:          { ar: 'ثني الأرجل', en: 'Leg curl', inc: 2.5 },
+  abd_add:           { ar: 'تبعيد وتقريب الأفخاذ', en: 'Abd & add', inc: 5,
                        caps: ['تبعيد — Abductor', 'تقريب — Adductor'] },
-  calf_raise:        { ar: 'رفع السمانة', en: 'Standing Calf Raise', inc: 5 },
-  butterfly_situp:   { ar: 'بطن فراشة', en: 'Butterfly Sit-Up', bw: true },
+  calf_raise:        { ar: 'رفع السمانة', en: 'Calf raises', inc: 5 },
+  butterfly_situp:   { ar: 'بطن فراشة', en: 'Butterfly sit-ups', bw: true },
   plank:             { ar: 'بلانك', en: 'Plank', bw: true, sec: true },
-  ab_wheel:          { ar: 'عجلة البطن', en: 'Ab Roller', bw: true },
+  ab_wheel:          { ar: 'عجلة البطن', en: 'Wheel core', bw: true },
 };
 
 /* ===== برنامجك: الأوزان والتكرارات كما أعطيتني =====
@@ -218,7 +218,7 @@ function exSection(i) {
         <img class="thumb" src="img/${it.ex}-0.jpg" alt="" loading="lazy"
              onclick="pic('${it.ex}')" onerror="this.remove()">
         <div>
-        <h2 onclick="pic('${it.ex}')">${esc(e.ar)}</h2>
+        <h2 onclick="pic('${it.ex}')">${esc(e.ar)}<span class="en">${esc(e.en || '')}</span></h2>
       <div class="last">${l ? `<em>آخر مرة</em>${l.sets.map(s => setText(it.ex, s)).join('   ')}` : '<em>أول مرة</em>'}</div>
         </div>
       </div>
