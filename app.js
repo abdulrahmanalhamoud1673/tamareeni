@@ -510,9 +510,13 @@ function toggleSet(ix, si) {
       const nx = S.active.entries.findIndex((e, i) => i > ix && e.sets.some(x => !x.done));
       if (nx >= 0) S.active.open = nx;
     }
-    const nextSS = S.active.entries[ix + 1];
-    const inSS = it.ss && nextSS && nextSS.ss === it.ss;
-    startRest(inSS ? S.settings.restSS : S.settings.rest);
+    // لا داعي لمؤقت راحة إذا خلص التمرين كله
+    const remaining = S.active.entries.some(e => e.sets.some(x => !x.done));
+    if (remaining) {
+      const nextSS = S.active.entries[ix + 1];
+      const inSS = it.ss && nextSS && nextSS.ss === it.ss;
+      startRest(inSS ? S.settings.restSS : S.settings.rest);
+    }
   }
   save(); render();
 }
