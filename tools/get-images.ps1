@@ -13,8 +13,11 @@ $ep.Param[0] = New-Object System.Drawing.Imaging.EncoderParameter([System.Drawin
 
 $ok = 0; $fail = @()
 foreach ($p in $map.PSObject.Properties) {
+  # القيمة إما اسم واحد (صورتا البداية والنهاية) أو اسمان (تمرينان مختلفان، أول صورة من كلٍ منهما)
+  $pair = @($p.Value)
   foreach ($i in 0, 1) {
-    $url = "$base/$($p.Value)/$i.jpg"
+    if ($pair.Count -gt 1) { $src = $pair[$i]; $n = 0 } else { $src = $pair[0]; $n = $i }
+    $url = "$base/$src/$n.jpg"
     $dst = Join-Path $out "$($p.Name)-$i.jpg"
     $tmp = [System.IO.Path]::GetTempFileName()
     try {

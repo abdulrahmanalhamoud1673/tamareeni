@@ -12,7 +12,7 @@
   "lat_pulldown": "Wide-Grip_Lat_Pulldown",
   "low_row_cable": "Seated_Cable_Rows",
   "row_hammer_high": "Leverage_High_Row",
-  "high_row_cable": "Elevated_Cable_Rows",
+  "high_row_cable": "Kneeling_High_Pulley_Row",
   "reverse_fly": "Reverse_Machine_Flyes",
   "hyper_ext": "Hyperextensions_Back_Extensions",
   "trx_row": "Inverted_Row_with_Straps",
@@ -30,9 +30,9 @@
   "lunges": "Bodyweight_Walking_Lunge",
   "leg_ext": "Leg_Extensions",
   "leg_curl": "Seated_Leg_Curl",
-  "abd_add": "Thigh_Abductor",
+  "abd_add": ["Thigh_Abductor", "Thigh_Adductor"],
   "calf_raise": "Standing_Calf_Raises",
-  "butterfly_situp": "Sit-Up",
+  "butterfly_situp": "Frog_Sit-Ups",
   "plank": "Plank",
   "ab_wheel": "Ab_Roller"
 }

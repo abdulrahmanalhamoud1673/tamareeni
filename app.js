@@ -31,21 +31,23 @@ const EX = {
   lunges:            { ar: 'طعنات', en: 'Walking Lunge', bw: true },
   leg_ext:           { ar: 'تمديد الأرجل', en: 'Leg Extension', inc: 2.5 },
   leg_curl:          { ar: 'ثني الأرجل', en: 'Seated Leg Curl', inc: 2.5 },
-  abd_add:           { ar: 'تبعيد وتقريب الأفخاذ', en: 'Thigh Abductor / Adductor', inc: 5 },
+  abd_add:           { ar: 'تبعيد وتقريب الأفخاذ', en: 'Thigh Abductor / Adductor', inc: 5,
+                       caps: ['تبعيد — Abductor', 'تقريب — Adductor'] },
   calf_raise:        { ar: 'رفع السمانة', en: 'Standing Calf Raise', inc: 5 },
   butterfly_situp:   { ar: 'بطن فراشة', en: 'Butterfly Sit-Up', bw: true },
   plank:             { ar: 'بلانك', en: 'Plank', bw: true, sec: true },
   ab_wheel:          { ar: 'عجلة البطن', en: 'Ab Roller', bw: true },
 };
 
-/* ===== برنامجك: الأوزان والتكرارات كما أعطيتني ===== */
+/* ===== برنامجك: الأوزان والتكرارات كما أعطيتني =====
+   العنصر الثالث (اختياري) = رقم السوبرست: التمارين التي تحمل نفس الرقم تُنفَّذ بلا راحة بينها */
 const PROGRAM = {
   d1: { name: 'صدر وترايسبس', items: [
     ['incline_bar_press', [[10,12],[10,10],[10,8]]],
-    ['cable_press',       [[20,8],[20,8],[20,8]]],
-    ['cable_fly',         [[25,8],[25,8],[25,8]]],
-    ['decline_bar_press', [[10,8],[10,8],[10,8]]],
-    ['dips',              [[30,8],[30,8],[30,8]]],
+    ['cable_press',       [[20,8],[20,8],[20,8]], 1],
+    ['cable_fly',         [[25,8],[25,8],[25,8]], 1],
+    ['decline_bar_press', [[10,8],[10,8],[10,8]], 2],
+    ['dips',              [[30,8],[30,8],[30,8]], 2],
     ['flat_db_press',     [[14,10],[14,10],[14,10]]],
     ['single_arm_oh_ext', [[15,12],[15,12],[15,12]]],
     ['rope_pushdown',     [[20,12],[20,10],[20,8]]],
@@ -76,7 +78,7 @@ const PROGRAM = {
     ['leg_ext',         [[18,12],[23,12],[29,12]]],
     ['leg_curl',        [[39,12],[45,12],[45,12]]],
     ['abd_add',         [[95,15],[95,15],[95,15]]],
-    ['calf_raise',      [[45,20],[45,20],[45,20]]],
+    ['calf_raise',      [[45,20],[45,20],[45,20]], 1],
     ['butterfly_situp', [[0,20],[0,20],[0,20]]],
     ['plank',           [[0,60],[0,60],[0,60]]],
     ['ab_wheel',        [[0,10],[0,10],[0,10]]],
@@ -165,9 +167,9 @@ function home() {
 function start(k) {
   S.active = {
     day: k, date: today(), start: Date.now(),
-    entries: PROGRAM[k].items.map(([id, sets]) => {
+    entries: PROGRAM[k].items.map(([id, sets, ss]) => {
       const l = last(id);
-      return { ex: id, sets: sets.map((s, i) => {
+      return { ex: id, ss: ss || null, sets: sets.map((s, i) => {
         const p = l && l.sets[i];
         return { w: p ? p.w : s[0], r: p ? p.r : s[1], done: false };
       })};
@@ -184,7 +186,31 @@ function workout() {
     <button class="link" onclick="finish()">إنهاء</button>
   </header>
 
-  ${a.entries.map((it, i) => {
+  ${groupSS(a.entries).map(g =>
+    g.ss ? `<div class="ssgroup"><div class="sslabel">${g.idx.length > 1
+              ? 'سوبرست — بدون راحة بين التمرينين' : 'سوبرست'}</div>${g.idx.map(exSection).join('')}</div>`
+         : exSection(g.idx[0])).join('')}
+
+  <button class="btn" onclick="finish()">إنهاء التمرين</button>
+  <button class="btn quiet" onclick="cancel()">إلغاء</button>`;
+  clock();
+}
+
+// يجمع التمارين المتتالية التي تحمل نفس رقم السوبرست
+function groupSS(entries) {
+  const out = [];
+  for (let i = 0; i < entries.length; i++) {
+    if (entries[i].ss != null) {
+      const idx = [i];
+      while (i + 1 < entries.length && entries[i + 1].ss === entries[i].ss) idx.push(++i);
+      out.push({ ss: true, idx });
+    } else out.push({ ss: false, idx: [i] });
+  }
+  return out;
+}
+
+function exSection(i) {
+    const it = S.active.entries[i];
     const e = ex(it.ex), l = last(it.ex);
     const wcol = e.bw ? '<div class="num flat">وزن الجسم</div>' : null;
     return `<section class="ex">
@@ -212,11 +238,6 @@ function workout() {
         </div>`).join('')}
       <div class="exfoot"><button onclick="addSet(${i})">إضافة مجموعة</button></div>
     </section>`;
-  }).join('')}
-
-  <button class="btn" onclick="finish()">إنهاء التمرين</button>
-  <button class="btn quiet" onclick="cancel()">إلغاء</button>`;
-  clock();
 }
 
 function adj(i, j, f, d) {
@@ -230,24 +251,28 @@ function addSet(i) {
   st.push({ w: l.w, r: l.r, done: false }); save(); render();
 }
 function tick(i, j) {
-  const s = S.active.entries[i].sets[j];
+  const it = S.active.entries[i], s = it.sets[j];
   s.done = !s.done;
   if (s.done) {
     buzz(25);
-    if (S.active.entries.some(e => e.sets.some(x => !x.done))) rest(S.rest);
+    // داخل السوبرست: انتقل للتمرين التالي مباشرة بلا راحة
+    const nx = S.active.entries[i + 1];
+    const inSS = it.ss != null && nx && nx.ss === it.ss && nx.sets.some(x => !x.done);
+    if (!inSS && S.active.entries.some(e => e.sets.some(x => !x.done))) rest(S.rest);
   }
   save(); render();
 }
 
 /* ===== صورة التمرين ===== */
 function pic(id) {
+  const caps = ex(id).caps || ['البداية', 'النهاية'];
   $('#photo').innerHTML = `<div class="in">
     <div class="bar">
       <div><h2>${esc(ex(id).ar)}</h2><div class="en">${esc(ex(id).en || '')}</div></div>
       <button class="link" onclick="closePic()">إغلاق</button>
     </div>
-    <figure><img src="img/${id}-0.jpg" alt=""><figcaption>البداية</figcaption></figure>
-    <figure><img src="img/${id}-1.jpg" alt="" onerror="this.parentNode.remove()"><figcaption>النهاية</figcaption></figure>
+    <figure><img src="img/${id}-0.jpg" alt=""><figcaption>${esc(caps[0])}</figcaption></figure>
+    <figure><img src="img/${id}-1.jpg" alt="" onerror="this.parentNode.remove()"><figcaption>${esc(caps[1])}</figcaption></figure>
   </div>`;
   $('#photo').classList.add('show');
 }
