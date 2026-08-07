@@ -1,4 +1,4 @@
-const CACHE = 'tamareeni-v4';
+const CACHE = 'tamareeni-v5';
 const ASSETS = ['./', './index.html', './app.js', './manifest.json', './icon-192.png', './icon-512.png'];
 
 // صور التمارين — تُخزّن مسبقاً حتى تظهر بدون إنترنت
@@ -38,8 +38,9 @@ self.addEventListener('fetch', e => {
   // الشبكة أولاً لملفات التطبيق (حتى تصل التحديثات)، والكاش احتياطي عند انقطاع النت
   const isApp = /\.(html|js|json)$/.test(url.pathname) || url.pathname.endsWith('/');
   if (isApp) {
+    // no-cache = تحقّق من الخادم دائماً، حتى لا تبقى نسخة قديمة عالقة في ذاكرة المتصفح
     e.respondWith(
-      fetch(req).then(res => {
+      fetch(new Request(req, { cache: 'no-cache' })).then(res => {
         const copy = res.clone();
         caches.open(CACHE).then(c => c.put(req, copy));
         return res;
