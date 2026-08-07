@@ -1,8 +1,25 @@
-const CACHE = 'tamareeni-v3';
+const CACHE = 'tamareeni-v4';
 const ASSETS = ['./', './index.html', './app.js', './manifest.json', './icon-192.png', './icon-512.png'];
 
+// صور التمارين — تُخزّن مسبقاً حتى تظهر بدون إنترنت
+const EX_IDS = [
+  'incline_bar_press','cable_press','cable_fly','decline_bar_press','dips','flat_db_press',
+  'single_arm_oh_ext','rope_pushdown','tri_ext_machine','lat_pulldown','low_row_cable',
+  'row_hammer_high','high_row_cable','reverse_fly','hyper_ext','trx_row','lateral_raise',
+  'shoulder_press_ham','upright_row','shoulder_press_n','shrugs','alt_curl_15','cable_curl',
+  'hammer_curl','squat','lunges','leg_ext','leg_curl','abd_add','calf_raise',
+  'butterfly_situp','plank','ab_wheel',
+];
+const IMAGES = EX_IDS.flatMap(id => [`./img/${id}-0.jpg`, `./img/${id}-1.jpg`]);
+
 self.addEventListener('install', e => {
-  e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)).then(() => self.skipWaiting()));
+  e.waitUntil(
+    caches.open(CACHE).then(async c => {
+      await c.addAll(ASSETS);
+      // الصور بشكل فردي حتى لا يفشل التثبيت كله بسبب ملف واحد
+      await Promise.all(IMAGES.map(u => c.add(u).catch(() => {})));
+    }).then(() => self.skipWaiting())
+  );
 });
 
 self.addEventListener('activate', e => {

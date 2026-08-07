@@ -57,8 +57,23 @@ header .sub{color:var(--mut);font-size:14px;font-variant-numeric:tabular-nums}
 .ex{padding:24px 0;border-bottom:1px solid var(--line)}
 .ex:last-of-type{border-bottom:0}
 .ex h2{font-size:18px;font-weight:600;margin:0 0 3px}
-.last{color:var(--mut);font-size:14px;font-variant-numeric:tabular-nums;margin-bottom:16px;direction:rtl}
+.last{color:var(--mut);font-size:14px;font-variant-numeric:tabular-nums;direction:rtl}
 .last em{font-style:normal;margin-inline-end:10px}
+.head{display:flex;gap:14px;align-items:flex-start;margin-bottom:16px}
+.head > div{flex:1;min-width:0}
+.thumb{width:56px;height:56px;flex:none;border:1px solid var(--line);border-radius:8px;
+  object-fit:cover;background:var(--soft);padding:0}
+
+/* ---------- صورة التمرين مكبّرة ---------- */
+#photo{position:fixed;inset:0;z-index:30;background:var(--bg);overflow-y:auto;display:none}
+#photo.show{display:block}
+#photo .in{max-width:560px;margin:0 auto;padding:0 20px calc(40px + env(safe-area-inset-bottom))}
+#photo .bar{display:flex;align-items:center;justify-content:space-between;gap:12px;
+  position:sticky;top:0;background:var(--bg);padding:calc(18px + env(safe-area-inset-top)) 0 14px}
+#photo h2{font-size:19px;font-weight:600;margin:0}
+#photo figure{margin:0 0 20px}
+#photo img{width:100%;border:1px solid var(--line);border-radius:10px;display:block}
+#photo figcaption{color:var(--mut);font-size:13px;margin-top:7px}
 
 .heads{display:grid;grid-template-columns:22px 1fr 1fr 54px;gap:10px;
   color:var(--mut);font-size:12px;text-align:center;margin-bottom:8px}
@@ -133,6 +148,7 @@ header .sub{color:var(--mut);font-size:14px;font-variant-numeric:tabular-nums}
   </div>
   <div id="track"><i></i></div>
 </div>
+<div id="photo" onclick="if(event.target.id==='photo')closePic()"></div>
 <div id="msg"></div>
 
 <script src="app.js"></script>

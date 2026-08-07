@@ -188,8 +188,14 @@ function workout() {
     const e = ex(it.ex), l = last(it.ex);
     const wcol = e.bw ? '<div class="num flat">وزن الجسم</div>' : null;
     return `<section class="ex">
-      <h2>${esc(e.ar)}</h2>
+      <div class="head">
+        <img class="thumb" src="img/${it.ex}-0.jpg" alt="" loading="lazy"
+             onclick="pic('${it.ex}')" onerror="this.remove()">
+        <div>
+        <h2 onclick="pic('${it.ex}')">${esc(e.ar)}</h2>
       <div class="last">${l ? `<em>آخر مرة</em>${l.sets.map(s => setText(it.ex, s)).join('   ')}` : '<em>أول مرة</em>'}</div>
+        </div>
+      </div>
       <div class="heads"><span></span><span>${e.bw ? '' : 'وزن'}</span><span>${e.sec ? 'ثانية' : 'تكرار'}</span><span></span></div>
       ${it.sets.map((s, j) => `
         <div class="set ${s.done ? 'done' : ''}">
@@ -232,6 +238,17 @@ function tick(i, j) {
   }
   save(); render();
 }
+
+/* ===== صورة التمرين ===== */
+function pic(id) {
+  $('#photo').innerHTML = `<div class="in">
+    <div class="bar"><h2>${esc(ex(id).ar)}</h2><button class="link" onclick="closePic()">إغلاق</button></div>
+    <figure><img src="img/${id}-0.jpg" alt=""><figcaption>البداية</figcaption></figure>
+    <figure><img src="img/${id}-1.jpg" alt="" onerror="this.parentNode.remove()"><figcaption>النهاية</figcaption></figure>
+  </div>`;
+  $('#photo').classList.add('show');
+}
+const closePic = () => $('#photo').classList.remove('show');
 
 /* ===== مؤقت الراحة ===== */
 let rt, left = 0, total = 0;

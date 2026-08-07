@@ -6,6 +6,6 @@ http.createServer((req, res) => {
   if (p === '/') p = '/index.html';
   const f = path.join(__dirname, p);
   if (!f.startsWith(__dirname) || !fs.existsSync(f) || fs.statSync(f).isDirectory()) { res.writeHead(404); return res.end('404'); }
-  res.writeHead(200, { 'Content-Type': MIME[path.extname(f)] || 'application/octet-stream', 'Cache-Control': 'no-store' });
+  res.writeHead(200, { 'Content-Type': MIME[path.extname(f)] || 'application/octet-stream', 'Cache-Control': 'no-cache' });
   fs.createReadStream(f).pipe(res);
 }).listen(5180, () => console.log('ready on http://localhost:5180'));

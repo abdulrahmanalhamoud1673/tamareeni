@@ -1,0 +1,38 @@
+{
+  "incline_bar_press": "Barbell_Incline_Bench_Press_-_Medium_Grip",
+  "cable_press": "Cable_Chest_Press",
+  "cable_fly": "Cable_Crossover",
+  "decline_bar_press": "Decline_Barbell_Bench_Press",
+  "dips": "Dips_-_Chest_Version",
+  "flat_db_press": "Dumbbell_Bench_Press",
+  "single_arm_oh_ext": "Standing_One-Arm_Dumbbell_Triceps_Extension",
+  "rope_pushdown": "Triceps_Pushdown_-_Rope_Attachment",
+  "tri_ext_machine": "Machine_Triceps_Extension",
+
+  "lat_pulldown": "Wide-Grip_Lat_Pulldown",
+  "low_row_cable": "Seated_Cable_Rows",
+  "row_hammer_high": "Leverage_High_Row",
+  "high_row_cable": "Elevated_Cable_Rows",
+  "reverse_fly": "Reverse_Machine_Flyes",
+  "hyper_ext": "Hyperextensions_Back_Extensions",
+  "trx_row": "Inverted_Row_with_Straps",
+
+  "lateral_raise": "Side_Lateral_Raise",
+  "shoulder_press_ham": "Leverage_Shoulder_Press",
+  "upright_row": "Upright_Barbell_Row",
+  "shoulder_press_n": "Dumbbell_Shoulder_Press",
+  "shrugs": "Barbell_Shrug",
+  "alt_curl_15": "Dumbbell_Alternate_Bicep_Curl",
+  "cable_curl": "Standing_Biceps_Cable_Curl",
+  "hammer_curl": "Hammer_Curls",
+
+  "squat": "Barbell_Full_Squat",
+  "lunges": "Bodyweight_Walking_Lunge",
+  "leg_ext": "Leg_Extensions",
+  "leg_curl": "Seated_Leg_Curl",
+  "abd_add": "Thigh_Abductor",
+  "calf_raise": "Standing_Calf_Raises",
+  "butterfly_situp": "Sit-Up",
+  "plank": "Plank",
+  "ab_wheel": "Ab_Roller"
+}
