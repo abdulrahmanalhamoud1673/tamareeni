@@ -155,8 +155,13 @@ function saveNote(id, v) {
 
 /* ===== العرض ===== */
 let page = 'home';
-function render() { ({ home, workout, log }[S.active ? 'workout' : page])(); scrollTo(0, 0); }
-const go = p => { page = p; render(); };
+// إعادة الرسم تحافظ على موضعك في الصفحة. مرّر true فقط عند الانتقال لشاشة أخرى.
+function render(toTop) {
+  const y = window.scrollY;
+  ({ home, workout, log }[S.active ? 'workout' : page])();
+  window.scrollTo(0, toTop ? 0 : y);
+}
+const go = p => { page = p; render(true); };
 
 function home() {
   const done = S.sessions;
@@ -196,7 +201,7 @@ function start(k) {
       })};
     }),
   };
-  save(); render();
+  save(); render(true);
 }
 
 function workout() {
@@ -343,12 +348,12 @@ function finish() {
                            .filter(e => e.sets.length);
   if (!entries.length) return msg('ما سجّلت أي مجموعة بعد');
   S.sessions.push({ day: a.day, date: a.date, start: a.start, end: Date.now(), entries });
-  S.active = null; save(); restSkip(); page = 'home'; render();
+  S.active = null; save(); restSkip(); page = 'home'; render(true);
   msg('تم حفظ التمرين');
 }
 function cancel() {
   if (!confirm('إلغاء التمرين بدون حفظ؟')) return;
-  S.active = null; save(); restSkip(); page = 'home'; render();
+  S.active = null; save(); restSkip(); page = 'home'; render(true);
 }
 
 /* ===== السجل ===== */
@@ -388,7 +393,7 @@ function restore(inp) {
       if (!Array.isArray(d.sessions)) throw 0;
       if (!confirm('سيتم استبدال بياناتك الحالية. متابعة؟')) return;
       S = Object.assign({ sessions: [], active: null, rest: 90 }, d);
-      save(); render(); msg('تم الاسترجاع');
+      save(); render(true); msg('تم الاسترجاع');
     } catch (e) { msg('الملف غير صالح'); }
   };
   r.readAsText(f);
