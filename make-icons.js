@@ -38,14 +38,11 @@ function draw(size, pad) {
     if (x < 0 || y < 0 || x >= size || y >= size) return;
     const i = (y * size + x) * 4; px[i] = r; px[i + 1] = g; px[i + 2] = b; px[i + 3] = 255;
   };
-  // خلفية داكنة
-  for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) {
-    const t = y / size;
-    set(x, y, Math.round(11 + t * 8), Math.round(16 + t * 10), Math.round(22 + t * 14));
-  }
-  // دمبل أخضر في المنتصف
+  // خلفية سوداء
+  for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) set(x, y, 13, 13, 13);
+  // دمبل أبيض في المنتصف
   const S = size, u = S / 100, cx = S / 2, cy = S / 2;
-  const G = [34, 197, 94], G2 = [22, 163, 74];
+  const G = [255, 255, 255], G2 = [255, 255, 255];
   const rect = (x0, y0, w, h, c, rad = 0) => {
     for (let y = y0; y < y0 + h; y++) for (let x = x0; x < x0 + w; x++) {
       if (rad) {

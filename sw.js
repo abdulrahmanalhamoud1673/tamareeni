@@ -1,4 +1,4 @@
-const CACHE = 'tamareeni-v2';
+const CACHE = 'tamareeni-v3';
 const ASSETS = ['./', './index.html', './app.js', './manifest.json', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', e => {
