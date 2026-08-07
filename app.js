@@ -87,7 +87,7 @@ const PROGRAM = {
 
 /* ===== التخزين ===== */
 const KEY = 'tamareeni';
-let S = Object.assign({ sessions: [], active: null, rest: 90 }, JSON.parse(localStorage.getItem(KEY) || '{}'));
+let S = Object.assign({ sessions: [], active: null, rest: 90, notes: {} }, JSON.parse(localStorage.getItem(KEY) || '{}'));
 const save = () => localStorage.setItem(KEY, JSON.stringify(S));
 
 /* ===== أدوات ===== */
@@ -131,6 +131,27 @@ function last(id) {
   return null;
 }
 const setText = (id, s) => ex(id).sec ? `${s.r} ث` : ex(id).bw ? `${s.r}` : `${n1(s.w)}×${s.r}`;
+
+/* هل أنجز كل التكرارات المستهدفة آخر مرة؟ إذاً حان وقت الزيادة */
+function readyToAdd(id, day) {
+  const l = last(id); if (!l) return null;
+  const item = (PROGRAM[day] || { items: [] }).items.find(x => x[0] === id);
+  if (!item) return null;
+  const t = item[1];
+  const hit = l.sets.length >= t.length && t.every((x, i) => l.sets[i] && l.sets[i].r >= x[1]);
+  if (!hit) return null;
+  const e = ex(id);
+  return e.sec ? 'زِد الوقت' : (e.bw && !e.inc) ? 'زِد التكرار' : 'زِد الوزن';
+}
+
+/* ملاحظات التمارين — تبقى محفوظة بين التمارين */
+let noteOpen = null;
+const startNote = id => { noteOpen = id; render(); const i = $('#noteIn'); if (i) { i.focus(); i.setSelectionRange(i.value.length, i.value.length); } };
+function saveNote(id, v) {
+  v = v.trim();
+  if (v) S.notes[id] = v; else delete S.notes[id];
+  noteOpen = null; save(); render();
+}
 
 /* ===== العرض ===== */
 let page = 'home';
@@ -213,13 +234,20 @@ function exSection(i) {
     const it = S.active.entries[i];
     const e = ex(it.ex), l = last(it.ex);
     const wcol = e.bw ? '<div class="num flat">وزن الجسم</div>' : null;
+    const up = readyToAdd(it.ex, S.active.day);
+    const note = S.notes[it.ex] || '';
     return `<section class="ex">
       <div class="head">
         <img class="thumb" src="img/${it.ex}-0.jpg" alt="" loading="lazy"
              onclick="pic('${it.ex}')" onerror="this.remove()">
         <div>
         <h2 onclick="pic('${it.ex}')">${esc(e.ar)}<span class="en">${esc(e.en || '')}</span></h2>
-      <div class="last">${l ? `<em>آخر مرة</em>${l.sets.map(s => setText(it.ex, s)).join('   ')}` : '<em>أول مرة</em>'}</div>
+      <div class="last">${l ? `<em>آخر مرة</em>${l.sets.map(s => setText(it.ex, s)).join('   ')}` : '<em>أول مرة</em>'}${
+        up ? `<span class="up">${up}</span>` : ''}</div>
+        ${noteOpen === it.ex
+          ? `<input id="noteIn" class="noteinput" value="${esc(note)}" placeholder="مثال: المقعد على درجة ٣"
+               onblur="saveNote('${it.ex}',this.value)" onkeydown="if(event.key==='Enter')this.blur()">`
+          : note ? `<div class="note" onclick="startNote('${it.ex}')">${esc(note)}</div>` : ''}
         </div>
       </div>
       <div class="heads"><span></span><span>${e.bw ? '' : 'وزن'}</span><span>${e.sec ? 'ثانية' : 'تكرار'}</span><span></span></div>
@@ -236,7 +264,8 @@ function exSection(i) {
             <button onclick="adj(${i},${j},'r',${e.sec ? 5 : 1})">+</button></div>
           <button class="tick ${s.done ? 'on' : ''}" onclick="tick(${i},${j})">✓</button>
         </div>`).join('')}
-      <div class="exfoot"><button onclick="addSet(${i})">إضافة مجموعة</button></div>
+      <div class="exfoot"><button onclick="addSet(${i})">إضافة مجموعة</button>${
+        note || noteOpen === it.ex ? '' : `<button onclick="startNote('${it.ex}')">إضافة ملاحظة</button>`}</div>
     </section>`;
 }
 

@@ -62,6 +62,12 @@ header .sub{color:var(--mut);font-size:14px;font-variant-numeric:tabular-nums}
   direction:ltr;unicode-bidi:isolate;white-space:nowrap}
 .last{color:var(--mut);font-size:14px;font-variant-numeric:tabular-nums;direction:rtl}
 .last em{font-style:normal;margin-inline-end:10px}
+.up{display:inline-block;color:var(--tx);border:1px solid var(--tx);border-radius:6px;
+  padding:0 8px;font-size:12px;margin-inline-start:10px;vertical-align:1px}
+.note{color:var(--mut);font-size:13.5px;margin-top:5px;padding-inline-start:13px;position:relative;line-height:1.5}
+.note::before{content:'';position:absolute;right:0;top:8px;width:5px;height:5px;border-radius:50%;background:var(--mut)}
+.noteinput{width:100%;margin-top:6px;background:var(--soft);border:1px solid var(--line);
+  border-radius:8px;padding:9px 12px;font-size:14px}
 .ssgroup{border-right:2px solid var(--tx);padding-right:16px;margin:6px 0}
 .ssgroup .ex:last-of-type{border-bottom:0}
 .sslabel{color:var(--mut);font-size:12px;padding-top:22px}
