@@ -6,11 +6,13 @@ const EX = {
   decline_bar_press: { ar: 'ضغط بار منحدر', en: 'Decline bar press', inc: 2.5 },
   dips:              { ar: 'متوازي', en: 'Dips', inc: 2.5 },
   flat_db_press:     { ar: 'ضغط دمبل مستوي', en: 'Flat db press', inc: 2 },
-  skull_crusher:     { ar: 'كسّارة الجمجمة بالبار المتعرّج', en: 'EZ-bar skull crusher', inc: 2.5 },
-  rope_overhead:     { ar: 'تمديد حبل فوق الرأس', en: 'Rope overhead extension', inc: 2.5 },
+  close_grip_bench:  { ar: 'ضغط بار قبضة ضيقة', en: 'Close-grip bench press', inc: 2.5 },
+  reverse_pushdown:  { ar: 'سحب كيبل بقبضة معكوسة', en: 'Reverse grip pushdown', inc: 1 },
   cable_one_arm_ext: { ar: 'سحب كيبل بذراع واحدة', en: 'Cable one arm extension', inc: 1 },
 
   // تمارين قديمة — باقية هنا فقط لتظهر بأسمائها في السجل
+  skull_crusher:     { ar: 'كسّارة الجمجمة بالبار المتعرّج', en: 'EZ-bar skull crusher', inc: 2.5 },
+  rope_overhead:     { ar: 'تمديد حبل فوق الرأس', en: 'Rope overhead extension', inc: 2.5 },
   single_arm_oh_ext: { ar: 'تمديد ترايسبس بذراع واحدة', en: 'Single arm over head', inc: 1 },
   rope_pushdown:     { ar: 'سحب حبل ترايسبس', en: 'Rope push down', inc: 1 },
   tri_ext_machine:   { ar: 'جهاز الترايسبس', en: 'Tri ext mach', inc: 2.5 },
@@ -54,8 +56,8 @@ const PROGRAM = {
     ['decline_bar_press', [[10,8],[10,8],[10,8]], 2],
     ['dips',              [[30,8],[30,8],[30,8]], 2],
     ['flat_db_press',     [[14,10],[14,10],[14,10]]],
-    ['skull_crusher',     [[15,12],[15,10],[15,8]]],
-    ['rope_overhead',     [[15,12],[15,12],[15,12]]],
+    ['close_grip_bench',  [[20,12],[20,10],[20,8]]],
+    ['reverse_pushdown',  [[10,12],[10,12],[10,12]]],
     ['cable_one_arm_ext', [[5,15],[5,15],[5,15]]],
   ]},
   d2: { name: 'ظهر', items: [
@@ -276,11 +278,7 @@ function exSection(i) {
             <input type="number" inputmode="numeric" value="${s.r}" onchange="put(${i},${j},'r',this.value)">
             <button onclick="adj(${i},${j},'r',${e.sec ? 5 : 1})">+</button></div>
           <button class="tick ${s.done ? 'on' : ''}" onclick="tick(${i},${j})">✓</button>
-          <button class="del" onclick="delSet(${i},${j})" aria-label="حذف المجموعة">
-            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.9"
-                 stroke-linecap="round" stroke-linejoin="round">
-              <path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14M10 11v5M14 11v5"/></svg>
-          </button>
+          ${trash(`delSet(${i},${j})`, 'حذف المجموعة')}
         </div>`).join('')}
       <div class="exfoot"><button onclick="addSet(${i})">إضافة مجموعة</button>${
         note || noteOpen === it.ex ? '' : `<button onclick="startNote('${it.ex}')">إضافة ملاحظة</button>`}</div>
@@ -377,18 +375,44 @@ function cancel() {
 
 /* ===== السجل ===== */
 let openRec = -1;
+// أيقونة سلة موحّدة
+const trash = (call, label) => `<button class="del" onclick="${call}" aria-label="${label}">
+  <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.9"
+       stroke-linecap="round" stroke-linejoin="round">
+    <path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14M10 11v5M14 11v5"/></svg></button>`;
+
+function delRec(idx) {
+  const s = S.sessions[idx]; if (!s) return;
+  if (!confirm(`حذف تمرين ${PROGRAM[s.day] ? PROGRAM[s.day].name : s.day} بتاريخ ${fmt(s.date)}؟`)) return;
+  S.sessions.splice(idx, 1); openRec = -1; save(); render();
+}
+function delEntry(idx, k) {
+  const s = S.sessions[idx]; if (!s || !s.entries[k]) return;
+  if (!confirm(`حذف «${ex(s.entries[k].ex).ar}» من هذا التمرين؟`)) return;
+  s.entries.splice(k, 1);
+  if (!s.entries.length) S.sessions.splice(idx, 1);   // ما ضل فيه شي
+  save(); render();
+}
+
 function log() {
   const list = S.sessions.slice().reverse();
   $('#app').innerHTML = `
   <header><h1>السجل</h1><button class="link" onclick="go('home')">رجوع</button></header>
   ${list.length ? list.map((s, i) => `
     <div class="rec">
-      <button onclick="openRec=${openRec === i ? -1 : i};render()">
-        <b>${PROGRAM[s.day] ? PROGRAM[s.day].name : s.day}</b>
-        <time>${fmt(s.date)} · ${Math.max(1, Math.round((s.end - s.start) / 60000))} د</time>
-      </button>
-      ${openRec === i ? `<div class="body">${s.entries.map(e => `
-        <div class="row"><b>${esc(ex(e.ex).ar)}</b><span>${e.sets.map(x => setText(e.ex, x)).join('  ')}</span></div>`).join('')}
+      <div class="recrow">
+        <button class="recmain" onclick="openRec=${openRec === i ? -1 : i};render()">
+          <b>${PROGRAM[s.day] ? PROGRAM[s.day].name : s.day}</b>
+          <time>${fmt(s.date)} · ${Math.max(1, Math.round((s.end - s.start) / 60000))} د</time>
+        </button>
+        ${trash(`delRec(${S.sessions.length - 1 - i})`, 'حذف التمرين')}
+      </div>
+      ${openRec === i ? `<div class="body">${s.entries.map((e, k) => `
+        <div class="row">
+          <b>${esc(ex(e.ex).ar)}</b>
+          <span>${e.sets.map(x => setText(e.ex, x)).join('  ')}</span>
+          ${trash(`delEntry(${S.sessions.length - 1 - i},${k})`, 'حذف هذا التمرين من السجل')}
+        </div>`).join('')}
       </div>` : ''}
     </div>`).join('') : '<div class="empty">ما في تمارين محفوظة بعد</div>'}
   <div class="foot">

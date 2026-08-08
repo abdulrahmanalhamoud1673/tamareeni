@@ -154,12 +154,15 @@ header .sub{color:var(--mut);font-size:14px;font-variant-numeric:tabular-nums}
 /* ---------- السجل ---------- */
 .rec{border-bottom:1px solid var(--line);padding:16px 0}
 .rec:last-child{border-bottom:0}
-.rec > button{display:flex;width:100%;justify-content:space-between;align-items:baseline;gap:12px;
+.recrow{display:flex;align-items:center;gap:10px}
+.recmain{display:flex;flex:1;justify-content:space-between;align-items:baseline;gap:12px;
   background:none;border:0;color:inherit;text-align:right;padding:0}
 .rec b{font-size:16px;font-weight:600}
 .rec time{color:var(--mut);font-size:13px;font-variant-numeric:tabular-nums}
 .rec .body{margin-top:14px}
-.rec .row{display:flex;justify-content:space-between;gap:14px;color:var(--mut);font-size:14px;padding:5px 0}
+.rec .row{display:flex;align-items:center;justify-content:space-between;gap:12px;color:var(--mut);font-size:14px;padding:2px 0}
+.rec .row b{flex:1}
+.rec .row .del{height:32px}
 .rec .row b{color:var(--tx);font-weight:400;font-size:15px}
 .rec .row span{font-variant-numeric:tabular-nums;direction:ltr;text-align:left}
 

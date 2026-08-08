@@ -1,16 +1,17 @@
-# Quick side-by-side of candidate images before committing to map.json
 Add-Type -AssemblyName System.Drawing
 $base = 'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises'
-$tmp  = Join-Path $env:TEMP 'exCompare2'
+$tmp  = Join-Path $env:TEMP 'exCompare3'
 if (-not (Test-Path $tmp)) { New-Item -ItemType Directory -Path $tmp | Out-Null }
 
 $cands = @(
-  @{ label='1 EZ-Bar Skullcrusher (start)'; id='EZ-Bar_Skullcrusher'; n=0 },
-  @{ label='1 EZ-Bar Skullcrusher (end)';   id='EZ-Bar_Skullcrusher'; n=1 },
-  @{ label='2 Rope Overhead Ext (start)';   id='Cable_Rope_Overhead_Triceps_Extension'; n=0 },
-  @{ label='2 Rope Overhead Ext (end)';     id='Cable_Rope_Overhead_Triceps_Extension'; n=1 },
-  @{ label='3 Cable One Arm Ext (start)';   id='Cable_One_Arm_Tricep_Extension'; n=0 },
-  @{ label='3 Cable One Arm Ext (end)';     id='Cable_One_Arm_Tricep_Extension'; n=1 }
+  @{ label='A Close-Grip Bench (start)';   id='Close-Grip_Barbell_Bench_Press'; n=0 },
+  @{ label='A Close-Grip Bench (end)';     id='Close-Grip_Barbell_Bench_Press'; n=1 },
+  @{ label='B Reverse Grip Pushdown (st)'; id='Reverse_Grip_Triceps_Pushdown'; n=0 },
+  @{ label='B Reverse Grip Pushdown (en)'; id='Reverse_Grip_Triceps_Pushdown'; n=1 },
+  @{ label='C Dip Machine (start)';        id='Dip_Machine'; n=0 },
+  @{ label='C Dip Machine (end)';          id='Dip_Machine'; n=1 },
+  @{ label='D V-Bar Pushdown (start)';     id='Triceps_Pushdown_-_V-Bar_Attachment'; n=0 },
+  @{ label='D V-Bar Pushdown (end)';       id='Triceps_Pushdown_-_V-Bar_Attachment'; n=1 }
 )
 $cols=2; $cw=330; $ch=220; $lab=24
 $rows=[Math]::Ceiling($cands.Count/$cols)
