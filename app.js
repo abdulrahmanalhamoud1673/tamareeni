@@ -501,13 +501,13 @@ function askSetup() {
   <header><h1>اسأل</h1><button class="link" onclick="go('home')">رجوع</button></header>
   <p class="muted">مساعد بيجاوبك عن أي تمرين أو جهاز، وبيقدر يشوف صورة تصوّرها بالنادي. مجاني تماماً.</p>
   <ol class="steps">
-    <li>افتح <b>aistudio.google.com/apikey</b></li>
-    <li>سجّل دخول بحساب جوجل العادي</li>
-    <li>اضغط <b>Create API key</b></li>
-    <li>انسخ المفتاح من أيقونة النسخ اللي جنبه، والصقه هنا</li>
+    <li>افتح <b>aistudio.google.com/apikey</b> وسجّل دخول بحساب جوجل</li>
+    <li>من القائمة اليسرى اضغط <b>API Keys</b> — مش Projects</li>
+    <li>إذا ما عندك مفتاح، اضغط <b>Create API key</b></li>
+    <li>اضغط أيقونة النسخ اللي جنب المفتاح بالجدول، والصقه هنا</li>
   </ol>
-  <div class="note2">المفتاح الصحيح يبدأ بـ <b>AIza</b> — مثال: <span dir="ltr">AIzaSyD…</span>.
-  إذا نسخت إشي بيبدأ بإشي ثاني، هذا مش المفتاح.</div>
+  <div class="note2">المفتاح يبدأ بـ <b>AIza</b> — مثال: <span dir="ltr">AIzaSyD…</span><br>
+  انتبه: <span dir="ltr">gen-lang-client-…</span> هذا رقم المشروع مش المفتاح، وبيكون بصفحة Projects.</div>
   <input type="text" id="keyIn" class="keyin" placeholder="AIzaSy..." value="${esc(S.key || '')}">
   <div class="keyerr" id="keyErr"></div>
   <button class="btn" id="keyBtn" onclick="saveKey()">تفعيل</button>
@@ -541,12 +541,16 @@ async function saveKey() {
   const err = $('#keyErr'), btn = $('#keyBtn');
   err.innerHTML = '';
   if (!k) { err.textContent = 'الصق المفتاح أولاً.'; return; }
-  // امنع الخطأ قبل ما نرسل أصلاً
+  // امنع الخطأ قبل ما نرسل أصلاً، واشرح بالضبط شو لصق
   if (!KEY_RE.test(k)) {
-    err.innerHTML = `هذا مش مفتاح API.<br>
-      مفتاح Gemini لازم يبدأ بـ <b>AIza</b> وطوله ٣٩ خانة تقريباً.<br>
-      اللي لصقته يبدأ بـ «${esc(k.slice(0, 6))}…» — هذا شي ثاني من الصفحة.<br>
-      ارجع على <b>aistudio.google.com/apikey</b> واضغط أيقونة النسخ اللي جنب المفتاح نفسه.`;
+    let what = `اللي لصقته يبدأ بـ «${esc(k.slice(0, 8))}…» — هذا شي ثاني من الصفحة.`;
+    if (/^gen-lang-client/i.test(k)) what = 'هذا <b>Project ID</b> (رقم المشروع) مش المفتاح — إنت بصفحة Projects.';
+    else if (/^projects\//i.test(k) || /^\d{6,}$/.test(k)) what = 'هذا اسم أو رقم المشروع، مش المفتاح.';
+    else if (/^AQ\./i.test(k)) what = 'هذا توكن تسجيل دخول، مش المفتاح.';
+    err.innerHTML = `${what}<br><br>
+      المفتاح موجود في صفحة <b>API Keys</b> — من القائمة اليسرى في AI Studio، فوق Projects.<br>
+      اضغط عليها، وبتلاقي مفتاحك بالجدول. انسخه من أيقونة النسخ اللي جنبه.<br>
+      لازم يبدأ بـ <b>AIza</b> وطوله ٣٩ خانة تقريباً.`;
     return;
   }
   const old = S.key; S.key = k;
