@@ -6,6 +6,11 @@ const EX = {
   decline_bar_press: { ar: 'ضغط بار منحدر', en: 'Decline bar press', inc: 2.5 },
   dips:              { ar: 'متوازي', en: 'Dips', inc: 2.5 },
   flat_db_press:     { ar: 'ضغط دمبل مستوي', en: 'Flat db press', inc: 2 },
+  skull_crusher:     { ar: 'كسّارة الجمجمة بالبار المتعرّج', en: 'EZ-bar skull crusher', inc: 2.5 },
+  rope_overhead:     { ar: 'تمديد حبل فوق الرأس', en: 'Rope overhead extension', inc: 2.5 },
+  cable_one_arm_ext: { ar: 'سحب كيبل بذراع واحدة', en: 'Cable one arm extension', inc: 1 },
+
+  // تمارين قديمة — باقية هنا فقط لتظهر بأسمائها في السجل
   single_arm_oh_ext: { ar: 'تمديد ترايسبس بذراع واحدة', en: 'Single arm over head', inc: 1 },
   rope_pushdown:     { ar: 'سحب حبل ترايسبس', en: 'Rope push down', inc: 1 },
   tri_ext_machine:   { ar: 'جهاز الترايسبس', en: 'Tri ext mach', inc: 2.5 },
@@ -49,9 +54,9 @@ const PROGRAM = {
     ['decline_bar_press', [[10,8],[10,8],[10,8]], 2],
     ['dips',              [[30,8],[30,8],[30,8]], 2],
     ['flat_db_press',     [[14,10],[14,10],[14,10]]],
-    ['single_arm_oh_ext', [[15,12],[15,12],[15,12]]],
-    ['rope_pushdown',     [[20,12],[20,10],[20,8]]],
-    ['tri_ext_machine',   [[25,20],[25,20],[25,20]]],
+    ['skull_crusher',     [[15,12],[15,10],[15,8]]],
+    ['rope_overhead',     [[15,12],[15,12],[15,12]]],
+    ['cable_one_arm_ext', [[5,15],[5,15],[5,15]]],
   ]},
   d2: { name: 'ظهر', items: [
     ['lat_pulldown',    [[6,12],[6,10],[6,8]]],
@@ -158,7 +163,7 @@ let page = 'home';
 // إعادة الرسم تحافظ على موضعك في الصفحة. مرّر true فقط عند الانتقال لشاشة أخرى.
 function render(toTop) {
   const y = window.scrollY;
-  ({ home, workout, log }[S.active ? 'workout' : page])();
+  ({ home, workout, log, ask }[S.active && page !== 'ask' ? 'workout' : page])();
   window.scrollTo(0, toTop ? 0 : y);
 }
 const go = p => { page = p; render(true); };
@@ -171,7 +176,10 @@ function home() {
 
   $('#app').innerHTML = `
   <header><h1>تماريني</h1>
-    <button class="link" onclick="go('log')">السجل</button></header>
+    <div class="hlinks">
+      <button class="link" onclick="askEx=null;go('ask')">اسأل</button>
+      <button class="link" onclick="go('log')">السجل</button>
+    </div></header>
 
   <div class="lbl">اختر تمرين اليوم</div>
   <div class="daylist">
@@ -255,7 +263,7 @@ function exSection(i) {
           : note ? `<div class="note" onclick="startNote('${it.ex}')">${esc(note)}</div>` : ''}
         </div>
       </div>
-      <div class="heads"><span></span><span>${e.bw ? '' : 'وزن'}</span><span>${e.sec ? 'ثانية' : 'تكرار'}</span><span></span></div>
+      <div class="heads"><span></span><span>${e.bw ? '' : 'وزن'}</span><span>${e.sec ? 'ثانية' : 'تكرار'}</span><span></span><span></span></div>
       ${it.sets.map((s, j) => `
         <div class="set ${s.done ? 'done' : ''}">
           <span class="n">${j + 1}</span>
@@ -268,6 +276,11 @@ function exSection(i) {
             <input type="number" inputmode="numeric" value="${s.r}" onchange="put(${i},${j},'r',this.value)">
             <button onclick="adj(${i},${j},'r',${e.sec ? 5 : 1})">+</button></div>
           <button class="tick ${s.done ? 'on' : ''}" onclick="tick(${i},${j})">✓</button>
+          <button class="del" onclick="delSet(${i},${j})" aria-label="حذف المجموعة">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.9"
+                 stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14M10 11v5M14 11v5"/></svg>
+          </button>
         </div>`).join('')}
       <div class="exfoot"><button onclick="addSet(${i})">إضافة مجموعة</button>${
         note || noteOpen === it.ex ? '' : `<button onclick="startNote('${it.ex}')">إضافة ملاحظة</button>`}</div>
@@ -283,6 +296,11 @@ function put(i, j, f, v) { S.active.entries[i].sets[j][f] = Math.max(0, +v || 0)
 function addSet(i) {
   const st = S.active.entries[i].sets, l = st[st.length - 1];
   st.push({ w: l.w, r: l.r, done: false }); save(); render();
+}
+function delSet(i, j) {
+  const st = S.active.entries[i].sets;
+  if (st.length === 1) return msg('لازم تضل مجموعة وحدة على الأقل');
+  st.splice(j, 1); save(); render();
 }
 function tick(i, j) {
   const it = S.active.entries[i], s = it.sets[j];
@@ -305,6 +323,7 @@ function pic(id) {
       <div><h2>${esc(ex(id).ar)}</h2><div class="en">${esc(ex(id).en || '')}</div></div>
       <button class="link" onclick="closePic()">إغلاق</button>
     </div>
+    <button class="btn quiet askbtn" onclick="closePic();askEx='${id}';go('ask')">اسأل عن هذا التمرين</button>
     <figure><img src="img/${id}-0.jpg" alt=""><figcaption>${esc(caps[0])}</figcaption></figure>
     <figure><img src="img/${id}-1.jpg" alt="" onerror="this.parentNode.remove()"><figcaption>${esc(caps[1])}</figcaption></figure>
   </div>`;
@@ -397,6 +416,151 @@ function restore(inp) {
     } catch (e) { msg('الملف غير صالح'); }
   };
   r.readAsText(f);
+}
+
+/* ===== المساعد الذكي (Gemini المجاني) ===== */
+let askEx = null;              // التمرين المرتبط بالسؤال، إن وُجد
+let pending = null;            // صورة بانتظار الإرسال
+const chatImgs = {};           // الصور تُعرض أثناء الجلسة فقط ولا تُخزَّن
+
+function ask() {
+  if (!S.key) return askSetup();
+  const c = S.chat || [];
+  $('#app').innerHTML = `
+  <header><h1>اسأل</h1><button class="link" onclick="askEx=null;go('home')">رجوع</button></header>
+  ${askEx ? `<div class="ctx">بخصوص: ${esc(ex(askEx).ar)}</div>` : ''}
+  <div class="chat" id="chatBox">
+    ${c.length ? c.map((m, i) => `<div class="m ${m.role}">${
+        chatImgs[i] ? `<img src="${chatImgs[i]}" alt="">` : m.img ? '<div class="imgnote">صورة</div>' : ''
+      }${m.role === 'me' ? esc(m.text) : fmtAi(m.text)}</div>`).join('')
+      : `<div class="hintbox">صوّر أي جهاز في النادي واسأل عنه، أو اكتب سؤالك مباشرة.</div>`}
+    ${pending ? `<div class="m me pend"><img src="${pending}" alt=""><span class="muted">جاهزة للإرسال</span></div>` : ''}
+  </div>
+
+  <div class="chips">
+    <button onclick="quick('هذا الجهاز اللي بالصورة، هل هو الصحيح لهذا التمرين؟ وإذا لأ شو الصحيح؟')">هذا الجهاز صح؟</button>
+    <button onclick="quick('ما بحس بالعضلة بهذا التمرين. شو الأخطاء الشائعة وكيف أصلحها؟')">ما بحس بالعضلة</button>
+    <button onclick="quick('حلّل تقدمي بآخر تمارين وقلّي شو أعدّل')">حلّل تقدمي</button>
+  </div>
+
+  <div class="askbar">
+    <button onclick="$('#camIn').click()" aria-label="صورة">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7"
+           stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 8a2 2 0 0 1 2-2h2l1.5-2h7L17 6h2a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+        <circle cx="12" cy="13" r="3.4"/></svg>
+    </button>
+    <input type="text" id="qIn" placeholder="اكتب سؤالك..." onkeydown="if(event.key==='Enter')send()">
+    <button class="send" onclick="send()" aria-label="إرسال">
+      <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.9"
+           stroke-linecap="round" stroke-linejoin="round"><path d="M20 12H5M12 5l-7 7 7 7"/></svg>
+    </button>
+  </div>
+  <input type="file" id="camIn" accept="image/*" capture="environment" hidden onchange="attach(this)">`;
+  const b = $('#chatBox'); if (b) b.scrollTop = b.scrollHeight;
+  window.scrollTo(0, document.body.scrollHeight);
+}
+
+function askSetup() {
+  $('#app').innerHTML = `
+  <header><h1>اسأل</h1><button class="link" onclick="go('home')">رجوع</button></header>
+  <p class="muted">مساعد بيجاوبك عن أي تمرين أو جهاز، وبيقدر يشوف صورة تصوّرها بالنادي. مجاني تماماً.</p>
+  <ol class="steps">
+    <li>افتح <b>aistudio.google.com/apikey</b> من متصفح جوالك</li>
+    <li>سجّل دخول بحساب جوجل العادي</li>
+    <li>اضغط <b>Create API key</b> وانسخ المفتاح</li>
+    <li>الصقه هنا</li>
+  </ol>
+  <input type="text" id="keyIn" class="keyin" placeholder="AIza...">
+  <button class="btn" onclick="saveKey()">تفعيل</button>
+  <p class="muted sm">بدون بطاقة وبدون اشتراك. المفتاح بيتخزّن على جهازك فقط.</p>`;
+}
+function saveKey() {
+  const k = $('#keyIn').value.trim();
+  if (k.length < 20) return msg('المفتاح مش مضبوط');
+  S.key = k; save(); render();
+}
+const fmtAi = t => esc(t).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>')
+                        .replace(/^\s*[-*]\s+/gm, '— ').replace(/\n/g, '<br>');
+const quick = t => { $('#qIn').value = t; send(); };
+
+function shrink(file, max = 800, q = 0.7) {
+  return new Promise(res => {
+    const fr = new FileReader(), im = new Image();
+    fr.onload = () => { im.onload = () => {
+      const s = Math.min(1, max / Math.max(im.width, im.height));
+      const cv = document.createElement('canvas');
+      cv.width = Math.round(im.width * s); cv.height = Math.round(im.height * s);
+      cv.getContext('2d').drawImage(im, 0, 0, cv.width, cv.height);
+      res(cv.toDataURL('image/jpeg', q));
+    }; im.src = fr.result; };
+    fr.readAsDataURL(file);
+  });
+}
+async function attach(inp) {
+  const f = inp.files[0]; if (!f) return; inp.value = '';
+  pending = await shrink(f); render();
+}
+
+async function send() {
+  const inp = $('#qIn'); const q = (inp ? inp.value : '').trim();
+  if (!q && !pending) return;
+  const img = pending; pending = null;
+  S.chat = S.chat || [];
+  S.chat.push({ role: 'me', text: q || 'شو هذا الجهاز؟', img: !!img });
+  if (img) chatImgs[S.chat.length - 1] = img;
+  if (S.chat.length > 24) { S.chat = S.chat.slice(-24); }
+  save(); render();
+
+  const box = $('#chatBox');
+  box.insertAdjacentHTML('beforeend', '<div class="m ai" id="wait">...</div>');
+  box.scrollTop = box.scrollHeight;
+  try {
+    const parts = [];
+    if (img) parts.push({ inline_data: { mime_type: 'image/jpeg', data: img.split(',')[1] } });
+    parts.push({ text: `${context()}\n\nسؤاله: ${q || 'شو هذا الجهاز وأي تمرين بينعمل عليه؟'}` });
+    const t = await gemini(parts);
+    S.chat.push({ role: 'ai', text: t });
+  } catch (e) {
+    S.chat.push({ role: 'ai', text: 'ما قدرت أتصل: ' + e.message + '\nتأكد من الإنترنت أو من المفتاح.' });
+  }
+  save(); render();
+}
+
+function context() {
+  const days = Object.entries(PROGRAM)
+    .map(([k, d]) => `- ${d.name}: ${d.items.map(x => ex(x[0]).ar).join('، ')}`).join('\n');
+  const recent = S.sessions.slice(-3).map(s =>
+    `${s.date} (${PROGRAM[s.day] ? PROGRAM[s.day].name : s.day}): ` +
+    s.entries.map(e => `${ex(e.ex).ar} ${e.sets.map(x => x.w + '×' + x.r).join(',')}`).join(' | ')).join('\n');
+  return `برنامج المتدرّب (٤ أيام):\n${days}\n\nآخر تمارينه:\n${recent || 'لا يوجد بعد'}`
+    + (askEx ? `\n\nسؤاله يخص تمرين: ${ex(askEx).ar} (${ex(askEx).en})` : '');
+}
+
+const SYS = 'أنت مدرب حديد محترف. جاوب بالعربية العامية الأردنية، مختصر ومباشر وعملي، أقل من ١٥٠ كلمة إلا إذا طُلب تفصيل. '
+  + 'إذا أُرسلت صورة جهاز، حدّد اسمه وأي عضلة يستهدف وكيف يُستخدم صح. '
+  + 'لا تعطِ نصائح دوائية أو منشطات، وإذا ذُكرت إصابة انصح بمراجعة مختص.';
+
+async function gemini(parts) {
+  let err = 'تعذّر الاتصال';
+  for (const m of ['gemini-2.5-flash', 'gemini-2.0-flash']) {
+    try {
+      const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${encodeURIComponent(S.key)}`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ role: 'user', parts }],
+          systemInstruction: { parts: [{ text: SYS }] },
+          generationConfig: { temperature: 0.6, maxOutputTokens: 700 },
+        }),
+      });
+      const j = await r.json();
+      if (j.error) { err = j.error.message; continue; }
+      const t = (j.candidates?.[0]?.content?.parts || []).map(p => p.text).filter(Boolean).join('');
+      if (t) return t;
+      err = 'رد فارغ';
+    } catch (e) { err = e.message; }
+  }
+  throw new Error(err);
 }
 
 /* ===== الإقلاع ===== */

@@ -40,6 +40,33 @@ header h1{font-size:20px;font-weight:600;margin:0;letter-spacing:-.2px}
 header .sub{color:var(--mut);font-size:14px;font-variant-numeric:tabular-nums}
 .link{background:none;border:0;color:var(--mut);font-size:15px;padding:6px 0}
 .link:active{color:var(--tx)}
+.hlinks{display:flex;gap:18px;align-items:center}
+
+/* ---------- المساعد ---------- */
+.ctx{color:var(--mut);font-size:13.5px;border:1px solid var(--line);border-radius:9px;padding:8px 13px;margin-bottom:4px}
+.chat{display:flex;flex-direction:column;gap:12px;margin:18px 0 8px;min-height:40vh}
+.m{max-width:88%;padding:11px 15px;border-radius:15px;font-size:15px;line-height:1.75;word-wrap:break-word}
+.m.me{align-self:flex-start;background:var(--tx);color:var(--bg);border-bottom-right-radius:4px}
+.m.ai{align-self:flex-end;background:var(--soft);border:1px solid var(--line);border-bottom-left-radius:4px}
+.m.pend{opacity:.55}
+.m img{width:100%;max-width:210px;border-radius:9px;margin-bottom:7px;display:block}
+.m .muted{font-size:12.5px;opacity:.8}
+.imgnote{font-size:12px;opacity:.7;margin-bottom:4px}
+.hintbox{color:var(--mut);font-size:14.5px;text-align:center;padding:34px 20px;line-height:1.9}
+.chips{display:flex;gap:7px;overflow-x:auto;padding-bottom:4px;-webkit-overflow-scrolling:touch}
+.chips button{flex:none;background:none;border:1px solid var(--line);border-radius:99px;
+  padding:7px 14px;font-size:13px;color:var(--mut);white-space:nowrap}
+.askbar{position:sticky;bottom:0;background:var(--bg);display:flex;gap:8px;align-items:center;
+  padding:12px 0 calc(14px + env(safe-area-inset-bottom));margin-top:8px}
+.askbar input[type=text]{flex:1;min-width:0;background:var(--soft);border:1px solid var(--line);
+  border-radius:22px;padding:12px 17px;font-size:15px}
+.askbar button{width:44px;height:44px;flex:none;border-radius:50%;border:1px solid var(--line);
+  background:none;display:grid;place-items:center;color:var(--tx)}
+.askbar button.send{background:var(--tx);color:var(--bg);border-color:var(--tx)}
+.steps{padding-inline-start:20px;line-height:2.1;font-size:15px}
+.keyin{width:100%;background:var(--soft);border:1px solid var(--line);border-radius:10px;
+  padding:13px 15px;font-size:15px;direction:ltr;text-align:left;margin-top:6px}
+.askbtn{margin-top:0;margin-bottom:22px}
 
 /* ---------- الصفحة الرئيسية ---------- */
 .lbl{color:var(--mut);font-size:13px;letter-spacing:.02em;margin:26px 0 10px}
@@ -88,13 +115,15 @@ header .sub{color:var(--mut);font-size:14px;font-variant-numeric:tabular-nums}
 #photo img{width:100%;border:1px solid var(--line);border-radius:10px;display:block}
 #photo figcaption{color:var(--mut);font-size:13px;margin-top:7px}
 
-.heads{display:grid;grid-template-columns:22px 1fr 1fr 54px;gap:10px;
+.heads{display:grid;grid-template-columns:18px 1fr 1fr 46px 26px;gap:8px;
   color:var(--mut);font-size:12px;text-align:center;margin-bottom:8px}
-.set{display:grid;grid-template-columns:22px 1fr 1fr 54px;gap:10px;align-items:center;margin-bottom:10px}
+.set{display:grid;grid-template-columns:18px 1fr 1fr 46px 26px;gap:8px;align-items:center;margin-bottom:10px}
+.del{background:none;border:0;color:var(--mut);opacity:.5;padding:0;display:grid;place-items:center;height:44px}
+.del:active{opacity:1;color:var(--tx)}
 .set.done{opacity:.4}
 .set > .n{text-align:center;color:var(--mut);font-size:14px;font-variant-numeric:tabular-nums}
 .num{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden}
-.num button{flex:none;width:42px;background:none;border:0;color:var(--mut);font-size:20px;padding:11px 0;line-height:1}
+.num button{flex:none;width:36px;background:none;border:0;color:var(--mut);font-size:20px;padding:11px 0;line-height:1}
 .num button:active{background:var(--soft)}
 .num input{flex:1;min-width:0;width:100%;background:none;border:0;text-align:center;
   font-size:17px;font-weight:600;padding:11px 0;font-variant-numeric:tabular-nums;-moz-appearance:textfield}
