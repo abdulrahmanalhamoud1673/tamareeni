@@ -6,11 +6,12 @@ const EX = {
   decline_bar_press: { ar: 'ضغط بار منحدر', en: 'Decline bar press', inc: 2.5 },
   dips:              { ar: 'متوازي', en: 'Dips', inc: 2.5 },
   flat_db_press:     { ar: 'ضغط دمبل مستوي', en: 'Flat db press', inc: 2 },
-  close_grip_bench:  { ar: 'ضغط بار قبضة ضيقة', en: 'Close-grip bench press', inc: 2.5 },
+  dip_machine:       { ar: 'جهاز الديبس', en: 'Dip machine', inc: 2.5 },
   reverse_pushdown:  { ar: 'سحب كيبل بقبضة معكوسة', en: 'Reverse grip pushdown', inc: 1 },
   cable_one_arm_ext: { ar: 'سحب كيبل بذراع واحدة', en: 'Cable one arm extension', inc: 1 },
 
   // تمارين قديمة — باقية هنا فقط لتظهر بأسمائها في السجل
+  close_grip_bench:  { ar: 'ضغط بار قبضة ضيقة', en: 'Close-grip bench press', inc: 2.5 },
   skull_crusher:     { ar: 'كسّارة الجمجمة بالبار المتعرّج', en: 'EZ-bar skull crusher', inc: 2.5 },
   rope_overhead:     { ar: 'تمديد حبل فوق الرأس', en: 'Rope overhead extension', inc: 2.5 },
   single_arm_oh_ext: { ar: 'تمديد ترايسبس بذراع واحدة', en: 'Single arm over head', inc: 1 },
@@ -56,7 +57,7 @@ const PROGRAM = {
     ['decline_bar_press', [[10,8],[10,8],[10,8]], 2],
     ['dips',              [[30,8],[30,8],[30,8]], 2],
     ['flat_db_press',     [[14,10],[14,10],[14,10]]],
-    ['close_grip_bench',  [[20,12],[20,10],[20,8]]],
+    ['dip_machine',       [[20,12],[20,10],[20,8]]],
     ['reverse_pushdown',  [[10,12],[10,12],[10,12]]],
     ['cable_one_arm_ext', [[5,15],[5,15],[5,15]]],
   ]},
