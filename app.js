@@ -501,39 +501,54 @@ function askSetup() {
   <header><h1>اسأل</h1><button class="link" onclick="go('home')">رجوع</button></header>
   <p class="muted">مساعد بيجاوبك عن أي تمرين أو جهاز، وبيقدر يشوف صورة تصوّرها بالنادي. مجاني تماماً.</p>
   <ol class="steps">
-    <li>افتح <b>aistudio.google.com/apikey</b> من متصفح جوالك</li>
+    <li>افتح <b>aistudio.google.com/apikey</b></li>
     <li>سجّل دخول بحساب جوجل العادي</li>
-    <li>اضغط <b>Create API key</b> وانسخ المفتاح كامل</li>
-    <li>الصقه هنا</li>
+    <li>اضغط <b>Create API key</b></li>
+    <li>انسخ المفتاح من أيقونة النسخ اللي جنبه، والصقه هنا</li>
   </ol>
-  <input type="text" id="keyIn" class="keyin" placeholder="AIza..." value="${esc(S.key || '')}">
+  <div class="note2">المفتاح الصحيح يبدأ بـ <b>AIza</b> — مثال: <span dir="ltr">AIzaSyD…</span>.
+  إذا نسخت إشي بيبدأ بإشي ثاني، هذا مش المفتاح.</div>
+  <input type="text" id="keyIn" class="keyin" placeholder="AIzaSy..." value="${esc(S.key || '')}">
   <div class="keyerr" id="keyErr"></div>
   <button class="btn" id="keyBtn" onclick="saveKey()">تفعيل</button>
   <p class="muted sm">بدون بطاقة وبدون اشتراك. المفتاح بيتخزّن على جهازك فقط.
   عند الضغط على تفعيل بنجرّبه فوراً ونتأكد إنه شغّال.</p>`;
 }
 
+// شكل مفتاح Gemini: يبدأ بـ AIza وطوله ٣٩ خانة تقريباً
+const KEY_RE = /^AIza[A-Za-z0-9_-]{30,}$/;
+
 // ترجمة أخطاء جوجل لرسائل مفهومة وقابلة للتنفيذ
 function arErr(m) {
   m = String(m || '');
-  if (/API key not valid|API_KEY_INVALID|INVALID_ARGUMENT.*key/i.test(m))
-    return 'المفتاح غير صحيح. تأكد إنك نسخته كامل من aistudio.google.com/apikey بدون مسافات.';
-  if (/has not been used|SERVICE_DISABLED|PERMISSION_DENIED|403/i.test(m))
+  if (/UNAUTHENTICATED|invalid authentication credentials|OAuth 2 access token|login cookie/i.test(m))
+    return 'اللي حطيته مش مفتاح API — يبدو إنه توكن تسجيل دخول. المفتاح الصحيح يبدأ بـ AIza، انسخه من aistudio.google.com/apikey';
+  if (/API key not valid|API_KEY_INVALID|API key expired/i.test(m))
+    return 'المفتاح غير صحيح أو منتهي. أنشئ مفتاحاً جديداً من aistudio.google.com/apikey';
+  if (/has not been used|SERVICE_DISABLED|PERMISSION_DENIED|blocked|suspended/i.test(m))
     return 'هذا المفتاح ما عليه صلاحية. أنشئ مفتاحاً جديداً من aistudio.google.com/apikey مباشرة (مش من Google Cloud).';
-  if (/quota|RESOURCE_EXHAUSTED|429/i.test(m))
+  if (/RESOURCE_EXHAUSTED|Quota exceeded|rate limit/i.test(m))
     return 'خلص حدّك المجاني لهاليوم. جرّب بعد شوي أو بكرا.';
-  if (/location|not available in your country|FAILED_PRECONDITION/i.test(m))
-    return 'الخدمة مش متاحة من موقعك حالياً. جرّب لاحقاً.';
-  if (/Failed to fetch|NetworkError|network/i.test(m))
+  if (/user location|not available in your country|location is not supported/i.test(m))
+    return 'الخدمة مش متاحة من موقعك حالياً.';
+  if (/Failed to fetch|NetworkError|network|ERR_/i.test(m))
     return 'ما في اتصال إنترنت. المساعد بيحتاج نت، بعكس باقي التطبيق.';
-  return m;
+  return 'صار خطأ غير متوقع. جرّب مفتاحاً جديداً من aistudio.google.com/apikey';
 }
 
 async function saveKey() {
-  const k = $('#keyIn').value.trim();
+  const k = $('#keyIn').value.trim().replace(/\s+/g, '');
   const err = $('#keyErr'), btn = $('#keyBtn');
-  err.textContent = '';
-  if (k.length < 20) { err.textContent = 'المفتاح قصير — تأكد إنك نسخته كامل.'; return; }
+  err.innerHTML = '';
+  if (!k) { err.textContent = 'الصق المفتاح أولاً.'; return; }
+  // امنع الخطأ قبل ما نرسل أصلاً
+  if (!KEY_RE.test(k)) {
+    err.innerHTML = `هذا مش مفتاح API.<br>
+      مفتاح Gemini لازم يبدأ بـ <b>AIza</b> وطوله ٣٩ خانة تقريباً.<br>
+      اللي لصقته يبدأ بـ «${esc(k.slice(0, 6))}…» — هذا شي ثاني من الصفحة.<br>
+      ارجع على <b>aistudio.google.com/apikey</b> واضغط أيقونة النسخ اللي جنب المفتاح نفسه.`;
+    return;
+  }
   const old = S.key; S.key = k;
   btn.disabled = true; btn.textContent = 'جارِ الفحص...';
   try {
@@ -542,7 +557,7 @@ async function saveKey() {
   } catch (e) {
     S.key = old;
     btn.disabled = false; btn.textContent = 'تفعيل';
-    err.textContent = arErr(e.message);
+    err.innerHTML = esc(arErr(e.message)) + `<div class="raw">${esc(String(e.message).slice(0, 150))}</div>`;
   }
 }
 function changeKey() { S.key = ''; save(); render(true); }
