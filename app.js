@@ -96,7 +96,8 @@ const PROGRAM = {
 /* ===== التخزين ===== */
 const KEY = 'tamareeni';
 let S = Object.assign({ sessions: [], active: null, rest: 90, notes: {} }, JSON.parse(localStorage.getItem(KEY) || '{}'));
-const save = () => localStorage.setItem(KEY, JSON.stringify(S));
+// الصور تُعرض أثناء الجلسة فقط ولا تُخزَّن (حتى لا تمتلئ ذاكرة المتصفح)
+const save = () => localStorage.setItem(KEY, JSON.stringify(S, (k, v) => k === '_img' ? undefined : v));
 
 /* ===== أدوات ===== */
 const $ = s => document.querySelector(s);
@@ -202,6 +203,7 @@ function home() {
 }
 
 function start(k) {
+  page = 'home'; askEx = null;      // اخرج من أي شاشة أخرى عند بدء تمرين
   S.active = {
     day: k, date: today(), start: Date.now(),
     entries: PROGRAM[k].items.map(([id, sets, ss]) => {
@@ -446,20 +448,27 @@ function restore(inp) {
 /* ===== المساعد الذكي (Gemini المجاني) ===== */
 let askEx = null;              // التمرين المرتبط بالسؤال، إن وُجد
 let pending = null;            // صورة بانتظار الإرسال
-const chatImgs = {};           // الصور تُعرض أثناء الجلسة فقط ولا تُخزَّن
+let draft = '';                // نص مكتوب لم يُرسَل بعد
+let busy = false;              // بانتظار رد
 
 function ask() {
   if (!S.key) return askSetup();
   const c = S.chat || [];
   $('#app').innerHTML = `
-  <header><h1>اسأل</h1><button class="link" onclick="askEx=null;go('home')">رجوع</button></header>
+  <header><h1>اسأل</h1>
+    <div class="hlinks">
+      ${c.length ? '<button class="link" onclick="clearChat()">مسح</button>' : ''}
+      <button class="link" onclick="changeKey()">المفتاح</button>
+      <button class="link" onclick="askEx=null;go('home')">رجوع</button>
+    </div></header>
   ${askEx ? `<div class="ctx">بخصوص: ${esc(ex(askEx).ar)}</div>` : ''}
   <div class="chat" id="chatBox">
-    ${c.length ? c.map((m, i) => `<div class="m ${m.role}">${
-        chatImgs[i] ? `<img src="${chatImgs[i]}" alt="">` : m.img ? '<div class="imgnote">صورة</div>' : ''
+    ${c.length ? c.map(m => `<div class="m ${m.role}">${
+        m._img ? `<img src="${m._img}" alt="">` : m.img ? '<div class="imgnote">صورة</div>' : ''
       }${m.role === 'me' ? esc(m.text) : fmtAi(m.text)}</div>`).join('')
       : `<div class="hintbox">صوّر أي جهاز في النادي واسأل عنه، أو اكتب سؤالك مباشرة.</div>`}
     ${pending ? `<div class="m me pend"><img src="${pending}" alt=""><span class="muted">جاهزة للإرسال</span></div>` : ''}
+    ${busy ? '<div class="m ai typing"><span></span><span></span><span></span></div>' : ''}
   </div>
 
   <div class="chips">
@@ -475,7 +484,8 @@ function ask() {
         <path d="M3 8a2 2 0 0 1 2-2h2l1.5-2h7L17 6h2a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
         <circle cx="12" cy="13" r="3.4"/></svg>
     </button>
-    <input type="text" id="qIn" placeholder="اكتب سؤالك..." onkeydown="if(event.key==='Enter')send()">
+    <input type="text" id="qIn" placeholder="اكتب سؤالك..." value="${esc(draft)}"
+           oninput="draft=this.value" onkeydown="if(event.key==='Enter')send()">
     <button class="send" onclick="send()" aria-label="إرسال">
       <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.9"
            stroke-linecap="round" stroke-linejoin="round"><path d="M20 12H5M12 5l-7 7 7 7"/></svg>
@@ -493,18 +503,50 @@ function askSetup() {
   <ol class="steps">
     <li>افتح <b>aistudio.google.com/apikey</b> من متصفح جوالك</li>
     <li>سجّل دخول بحساب جوجل العادي</li>
-    <li>اضغط <b>Create API key</b> وانسخ المفتاح</li>
+    <li>اضغط <b>Create API key</b> وانسخ المفتاح كامل</li>
     <li>الصقه هنا</li>
   </ol>
-  <input type="text" id="keyIn" class="keyin" placeholder="AIza...">
-  <button class="btn" onclick="saveKey()">تفعيل</button>
-  <p class="muted sm">بدون بطاقة وبدون اشتراك. المفتاح بيتخزّن على جهازك فقط.</p>`;
+  <input type="text" id="keyIn" class="keyin" placeholder="AIza..." value="${esc(S.key || '')}">
+  <div class="keyerr" id="keyErr"></div>
+  <button class="btn" id="keyBtn" onclick="saveKey()">تفعيل</button>
+  <p class="muted sm">بدون بطاقة وبدون اشتراك. المفتاح بيتخزّن على جهازك فقط.
+  عند الضغط على تفعيل بنجرّبه فوراً ونتأكد إنه شغّال.</p>`;
 }
-function saveKey() {
+
+// ترجمة أخطاء جوجل لرسائل مفهومة وقابلة للتنفيذ
+function arErr(m) {
+  m = String(m || '');
+  if (/API key not valid|API_KEY_INVALID|INVALID_ARGUMENT.*key/i.test(m))
+    return 'المفتاح غير صحيح. تأكد إنك نسخته كامل من aistudio.google.com/apikey بدون مسافات.';
+  if (/has not been used|SERVICE_DISABLED|PERMISSION_DENIED|403/i.test(m))
+    return 'هذا المفتاح ما عليه صلاحية. أنشئ مفتاحاً جديداً من aistudio.google.com/apikey مباشرة (مش من Google Cloud).';
+  if (/quota|RESOURCE_EXHAUSTED|429/i.test(m))
+    return 'خلص حدّك المجاني لهاليوم. جرّب بعد شوي أو بكرا.';
+  if (/location|not available in your country|FAILED_PRECONDITION/i.test(m))
+    return 'الخدمة مش متاحة من موقعك حالياً. جرّب لاحقاً.';
+  if (/Failed to fetch|NetworkError|network/i.test(m))
+    return 'ما في اتصال إنترنت. المساعد بيحتاج نت، بعكس باقي التطبيق.';
+  return m;
+}
+
+async function saveKey() {
   const k = $('#keyIn').value.trim();
-  if (k.length < 20) return msg('المفتاح مش مضبوط');
-  S.key = k; save(); render();
+  const err = $('#keyErr'), btn = $('#keyBtn');
+  err.textContent = '';
+  if (k.length < 20) { err.textContent = 'المفتاح قصير — تأكد إنك نسخته كامل.'; return; }
+  const old = S.key; S.key = k;
+  btn.disabled = true; btn.textContent = 'جارِ الفحص...';
+  try {
+    await gemini([{ text: 'رد بكلمة واحدة: جاهز' }]);
+    save(); render(); msg('المساعد صار جاهز');
+  } catch (e) {
+    S.key = old;
+    btn.disabled = false; btn.textContent = 'تفعيل';
+    err.textContent = arErr(e.message);
+  }
 }
+function changeKey() { S.key = ''; save(); render(true); }
+function clearChat() { S.chat = []; save(); render(); }
 const fmtAi = t => esc(t).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>')
                         .replace(/^\s*[-*]\s+/gm, '— ').replace(/\n/g, '<br>');
 const quick = t => { $('#qIn').value = t; send(); };
@@ -524,22 +566,21 @@ function shrink(file, max = 800, q = 0.7) {
 }
 async function attach(inp) {
   const f = inp.files[0]; if (!f) return; inp.value = '';
+  const i = $('#qIn'); if (i) draft = i.value;      // لا تضيّع اللي كتبه
+  msg('جارِ تجهيز الصورة...');
   pending = await shrink(f); render();
 }
 
 async function send() {
-  const inp = $('#qIn'); const q = (inp ? inp.value : '').trim();
+  if (busy) return;
+  const inp = $('#qIn'); const q = (inp ? inp.value : draft).trim();
   if (!q && !pending) return;
-  const img = pending; pending = null;
+  const img = pending; pending = null; draft = '';
   S.chat = S.chat || [];
-  S.chat.push({ role: 'me', text: q || 'شو هذا الجهاز؟', img: !!img });
-  if (img) chatImgs[S.chat.length - 1] = img;
-  if (S.chat.length > 24) { S.chat = S.chat.slice(-24); }
-  save(); render();
+  S.chat.push({ role: 'me', text: q || 'شو هذا الجهاز؟', img: !!img, _img: img || undefined });
+  if (S.chat.length > 24) S.chat = S.chat.slice(-24);
+  busy = true; save(); render();
 
-  const box = $('#chatBox');
-  box.insertAdjacentHTML('beforeend', '<div class="m ai" id="wait">...</div>');
-  box.scrollTop = box.scrollHeight;
   try {
     const parts = [];
     if (img) parts.push({ inline_data: { mime_type: 'image/jpeg', data: img.split(',')[1] } });
@@ -547,9 +588,9 @@ async function send() {
     const t = await gemini(parts);
     S.chat.push({ role: 'ai', text: t });
   } catch (e) {
-    S.chat.push({ role: 'ai', text: 'ما قدرت أتصل: ' + e.message + '\nتأكد من الإنترنت أو من المفتاح.' });
+    S.chat.push({ role: 'ai', text: arErr(e.message) });
   }
-  save(); render();
+  busy = false; save(); render();
 }
 
 function context() {
