@@ -610,7 +610,7 @@ async function makeReport() {
   if (repBusy) return;
   repBusy = true; render();
   try {
-    const t = await gemini([{ text: reportPrompt() }]);
+    const t = await gemini([{ text: reportPrompt() }], null, { max: 3000 });
     S.report = { date: today(), text: t };
   } catch (e) { msg(arErr(e.message)); }
   repBusy = false; save(); render();
@@ -753,7 +753,7 @@ async function saveKey() {
   const old = S.key; S.key = k;
   btn.disabled = true; btn.textContent = 'جارِ الفحص...';
   try {
-    await gemini([{ text: 'رد بكلمة واحدة: جاهز' }]);
+    await gemini([{ text: 'رد بكلمة واحدة: جاهز' }], null, { max: 64, sys: 'رد بكلمة واحدة فقط.' });
     save(); render(); msg('المساعد صار جاهز');
   } catch (e) {
     S.key = old;
@@ -800,8 +800,9 @@ async function send() {
   try {
     const parts = [];
     if (img) parts.push({ inline_data: { mime_type: 'image/jpeg', data: img.split(',')[1] } });
-    parts.push({ text: `${context()}\n\nسؤاله: ${q || 'شو هذا الجهاز وأي تمرين بينعمل عليه؟'}` });
-    const t = await gemini(parts);
+    parts.push({ text: q || 'شو هذا الجهاز وأي تمرين بينعمل عليه؟' });
+    // كل الرسائل قبل الحالية = ذاكرة المحادثة
+    const t = await gemini(parts, S.chat.slice(0, -1));
     S.chat.push({ role: 'ai', text: t });
   } catch (e) {
     S.chat.push({ role: 'ai', text: arErr(e.message) });
@@ -809,40 +810,101 @@ async function send() {
   busy = false; save(); render();
 }
 
+/* كل ما يعرفه المساعد عن المتدرّب — يُرسل مع كل رسالة */
 function context() {
-  const days = Object.entries(PROGRAM)
-    .map(([k, d]) => `- ${d.name}: ${d.items.map(x => ex(x[0]).ar).join('، ')}`).join('\n');
-  const recent = S.sessions.slice(-3).map(s =>
-    `${s.date} (${PROGRAM[s.day] ? PROGRAM[s.day].name : s.day}): ` +
+  const prog = Object.entries(PROGRAM).map(([k, d]) => {
+    const rows = d.items.map((it, i) => {
+      const id = it[0], l = last(id);
+      const now = l ? l.sets.map(s => `${s.w}×${s.r}`).join('  ') : 'ما جرّبه بعد';
+      const tgt = it[1].map(s => `${s[0]}×${s[1]}`).join('  ');
+      const n = (S.notes || {})[id] ? ` | ملاحظته: ${S.notes[id]}` : '';
+      return `  ${i + 1}. ${ex(id).ar} (${ex(id).en})${it[2] ? ' [سوبرست]' : ''}`
+           + `\n     آخر أداء: ${now} | المستهدف: ${tgt}${n}`;
+    }).join('\n');
+    const l = S.sessions.filter(s => s.day === k).pop();
+    return `${d.name}${l ? ` (آخر مرة ${ago(l.date)})` : ' (ما بلّشه بعد)'}:\n${rows}`;
+  }).join('\n\n');
+
+  const recent = S.sessions.slice(-5).map(s =>
+    `${s.date} — ${PROGRAM[s.day] ? PROGRAM[s.day].name : s.day}: ` +
     s.entries.map(e => `${ex(e.ex).ar} ${e.sets.map(x => x.w + '×' + x.r).join(',')}`).join(' | ')).join('\n');
-  return `برنامج المتدرّب (٤ أيام):\n${days}\n\nآخر تمارينه:\n${recent || 'لا يوجد بعد'}`
-    + (askEx ? `\n\nسؤاله يخص تمرين: ${ex(askEx).ar} (${ex(askEx).en})` : '');
+
+  const ids = [...new Set(S.sessions.flatMap(s => s.entries.map(e => e.ex)))];
+  const bests = ids.map(id => {
+    const h = exHistory(id); if (!h.length) return null;
+    return `${ex(id).ar}: ${Math.max(...h.map(x => x.max))} كغم`;
+  }).filter(Boolean).join('، ');
+
+  const proj = allProjections().map(x =>
+    `${ex(x.id).ar}: الآن ${x.p.now} ← ${x.p.goal} كغم خلال ${x.p.weeks} أسبوع`).join('\n');
+
+  const w = weekStats(7);
+  return `تاريخ اليوم: ${today()}
+وزن البار الفاضي عنده: ${S.bar} كغم. مدة راحته بين المجموعات: ${S.rest} ثانية.
+آخر ٧ أيام: ${w.days} تمارين، ${w.sets} مجموعة، ${Math.round(w.kg)} كغم إجمالي.
+
+=== برنامجه (٤ أيام) بأوزانه الحالية ===
+${prog}
+
+=== تفاصيل آخر ٥ تمارين ===
+${recent || 'ما في تمارين مسجّلة بعد'}
+
+=== أعلى وزن وصله بكل تمرين ===
+${bests || 'لا يوجد بعد'}
+
+=== توقّعات حسب سرعة تطوّره ===
+${proj || 'لسه ما في بيانات كافية'}`;
 }
 
-const SYS = 'أنت مدرب حديد محترف. جاوب بالعربية العامية الأردنية، مختصر ومباشر وعملي، أقل من ١٥٠ كلمة إلا إذا طُلب تفصيل. '
-  + 'إذا أُرسلت صورة جهاز، حدّد اسمه وأي عضلة يستهدف وكيف يُستخدم صح. '
-  + 'لا تعطِ نصائح دوائية أو منشطات، وإذا ذُكرت إصابة انصح بمراجعة مختص.';
+const SYS = `أنت مدرب حديد شخصي لهذا المتدرّب تحديداً. تعرف برنامجه وأوزانه وكل أرقامه، وهي معطاة لك تحت.
+
+قواعد:
+- جاوب بالعربية العامية الأردنية البسيطة، مباشر وبلا مقدمات.
+- استخدم أرقامه الحقيقية بالاسم. لا تخترع رقماً أبداً؛ إذا الرقم مش مسجّل قل إنه مش مسجّل.
+- أكمل جوابك حتى النهاية. لا تقطع الجملة بالنص أبداً.
+- خلّي الرد ١٢٠ كلمة أو أقل إلا إذا طلب تفصيل.
+- إذا أرسل صورة جهاز: حدّد اسمه، أي عضلة يستهدف، وهل يناسب التمرين اللي بيسأل عنه.
+- تذكّر المحادثة السابقة وجاوب على أساسها.
+- لا نصائح دوائية ولا منشطات. إذا ذكر إصابة أو ألم، انصحه بمراجعة مختص.`;
+
+const sysPrompt = () => SYS + '\n\n' + context()
+  + (askEx ? `\n\nملاحظة: سؤاله الحالي يخص تمرين «${ex(askEx).ar}» (${ex(askEx).en}).` : '');
 
 // نجرّب أكثر من نموذج: بعض المفاتيح المجانية ما عندها وصول لكلها
 const MODELS = ['gemini-2.5-flash', 'gemini-flash-latest', 'gemini-2.0-flash', 'gemini-2.5-flash-lite'];
-async function gemini(parts) {
+
+// history = رسائل المحادثة السابقة حتى يفهم السياق ولا يبدأ من الصفر كل مرة
+async function gemini(parts, history, opts) {
+  opts = opts || {};
   let err = 'تعذّر الاتصال';
-  for (const m of MODELS) {
+  const contents = [];
+  for (const m of (history || [])) {
+    if (!m.text) continue;
+    contents.push({ role: m.role === 'me' ? 'user' : 'model', parts: [{ text: m.text }] });
+  }
+  contents.push({ role: 'user', parts });
+
+  for (const model of MODELS) {
+    // نماذج 2.5 "بتفكّر" قبل ما تجاوب، والتفكير بيستهلك من حدّ الإخراج نفسه.
+    // بدون تعطيله كان الرد ينقطع بنص الجملة.
+    const gen = { temperature: 0.6, maxOutputTokens: opts.max || 2048 };
+    if (model.includes('2.5')) gen.thinkingConfig = { thinkingBudget: 0 };
     try {
-      const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent`, {
+      const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-goog-api-key': S.key },
         body: JSON.stringify({
-          contents: [{ role: 'user', parts }],
-          systemInstruction: { parts: [{ text: SYS }] },
-          generationConfig: { temperature: 0.6, maxOutputTokens: 700 },
+          contents,
+          systemInstruction: { parts: [{ text: opts.sys || sysPrompt() }] },
+          generationConfig: gen,
         }),
       });
       const j = await r.json();
       if (j.error) { err = j.error.message; continue; }
-      const t = (j.candidates?.[0]?.content?.parts || []).map(p => p.text).filter(Boolean).join('');
+      const c = (j.candidates || [])[0];
+      const t = ((c && c.content && c.content.parts) || []).map(p => p.text).filter(Boolean).join('').trim();
       if (t) return t;
-      err = 'رد فارغ';
+      err = c && c.finishReason === 'MAX_TOKENS' ? 'الرد انقطع لأنه طويل' : ((c && c.finishReason) || 'رد فارغ');
     } catch (e) { err = e.message; }
   }
   throw new Error(err);
