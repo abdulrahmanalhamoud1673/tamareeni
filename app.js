@@ -1,9 +1,10 @@
 /* ===== التمارين: الاسم بالعربي، والاسم الإنجليزي كما كتبته أنت في جدولك ===== */
 const EX = {
-  incline_bar_press: { ar: 'ضغط بار مائل', en: 'Incline bar press', inc: 2.5 },
+  // bar: true = تمرين بالبار، فتظهر له حاسبة توزيع الأوزان
+  incline_bar_press: { ar: 'ضغط بار مائل', en: 'Incline bar press', inc: 2.5, bar: true },
   cable_press:       { ar: 'ضغط كيبل', en: 'Cable press', inc: 2.5 },
   cable_fly:         { ar: 'تفتيح كيبل', en: 'Cable fly', inc: 2.5 },
-  decline_bar_press: { ar: 'ضغط بار منحدر', en: 'Decline bar press', inc: 2.5 },
+  decline_bar_press: { ar: 'ضغط بار منحدر', en: 'Decline bar press', inc: 2.5, bar: true },
   dips:              { ar: 'متوازي', en: 'Dips', inc: 2.5 },
   flat_db_press:     { ar: 'ضغط دمبل مستوي', en: 'Flat db press', inc: 2 },
   dip_machine:       { ar: 'جهاز الديبس', en: 'Dip machine', inc: 2.5 },
@@ -28,14 +29,14 @@ const EX = {
 
   lateral_raise:     { ar: 'رفرفة جانبية', en: 'Lateral raises', inc: 1 },
   shoulder_press_ham:{ ar: 'ضغط كتف هامر', en: 'Shoulder press hammer strength', inc: 2.5 },
-  upright_row:       { ar: 'تجديف عمودي', en: 'Upright row', inc: 2.5 },
+  upright_row:       { ar: 'تجديف عمودي', en: 'Upright row', inc: 2.5, bar: true },
   shoulder_press_n:  { ar: 'ضغط كتف قبضة محايدة', en: 'Shoulder press (N)', inc: 2 },
-  shrugs:            { ar: 'هز الأكتاف', en: 'Shrugs', inc: 2.5 },
+  shrugs:            { ar: 'هز الأكتاف', en: 'Shrugs', inc: 2.5, bar: true },
   alt_curl_15:       { ar: 'مرجحة تبادل', en: 'Alt arm curl 1.5', inc: 1 },
   cable_curl:        { ar: 'مرجحة كيبل', en: 'Cable arm curl', inc: 1 },
   hammer_curl:       { ar: 'مرجحة مطرقة', en: 'Hammer', inc: 1 },
 
-  squat:             { ar: 'سكوات', en: 'Squat', inc: 5 },
+  squat:             { ar: 'سكوات', en: 'Squat', inc: 5, bar: true },
   lunges:            { ar: 'طعنات', en: 'Lunges', bw: true },
   leg_ext:           { ar: 'تمديد الأرجل', en: 'Leg ext', inc: 2.5 },
   leg_curl:          { ar: 'ثني الأرجل', en: 'Leg curl', inc: 2.5 },
@@ -95,7 +96,8 @@ const PROGRAM = {
 
 /* ===== التخزين ===== */
 const KEY = 'tamareeni';
-let S = Object.assign({ sessions: [], active: null, rest: 90, notes: {} }, JSON.parse(localStorage.getItem(KEY) || '{}'));
+let S = Object.assign({ sessions: [], active: null, rest: 90, notes: {}, bar: 20 },
+                      JSON.parse(localStorage.getItem(KEY) || '{}'));
 // الصور تُعرض أثناء الجلسة فقط ولا تُخزَّن (حتى لا تمتلئ ذاكرة المتصفح)
 const save = () => localStorage.setItem(KEY, JSON.stringify(S, (k, v) => k === '_img' ? undefined : v));
 
@@ -141,6 +143,32 @@ function last(id) {
 }
 const setText = (id, s) => ex(id).sec ? `${s.r} ث` : ex(id).bw ? `${s.r}` : `${n1(s.w)}×${s.r}`;
 
+/* ===== حاسبة توزيع أوزان البار ===== */
+const PLATES = [20, 15, 10, 5, 2.5, 1.25];
+const nP = v => String(Math.round(v * 100) / 100);   // 1.25 تبقى 1.25 مش 1.3
+const nK = v => Math.round(v).toLocaleString('en-US');  // فواصل الآلاف
+function plateSplit(total, bar) {
+  bar = bar || S.bar || 20;
+  if (!(total > 0)) return { err: 'اكتب الوزن الكلي' };
+  if (total < bar) return { err: `أقل من وزن البار نفسه (${nP(bar)} كغم)` };
+  if (total === bar) return { bar, side: [], left: 0 };
+  let side = (total - bar) / 2;
+  const out = [];
+  for (const p of PLATES) {
+    const n = Math.floor(side / p + 1e-9);
+    if (n > 0) { out.push([p, n]); side = Math.round((side - n * p) * 100) / 100; }
+  }
+  return { bar, side: out, left: side };
+}
+function plateText(total) {
+  const r = plateSplit(total);
+  if (r.err) return r.err;
+  if (!r.side.length) return `البار لحاله (${nP(r.bar)} كغم)`;
+  const list = r.side.map(([p, n]) => n > 1 ? `${n}×${nP(p)}` : nP(p)).join(' + ');
+  return `بار ${nP(r.bar)} + (${list}) لكل جهة`
+       + (r.left > 0.01 ? ` — ناقص ${nP(r.left * 2)} كغم، أقرب وزن ${nP(total - r.left * 2)}` : '');
+}
+
 /* هل أنجز كل التكرارات المستهدفة آخر مرة؟ إذاً حان وقت الزيادة */
 function readyToAdd(id, day) {
   const l = last(id); if (!l) return null;
@@ -151,6 +179,66 @@ function readyToAdd(id, day) {
   if (!hit) return null;
   const e = ex(id);
   return e.sec ? 'زِد الوقت' : (e.bw && !e.inc) ? 'زِد التكرار' : 'زِد الوزن';
+}
+
+/* ===== حسابات التقرير الأسبوعي ===== */
+const inLast = d => S.sessions.filter(s => since(s.date) < d);
+
+// سجل تمرين معيّن عبر الزمن: أقصى وزن وحجم كل جلسة
+function exHistory(id) {
+  const out = [];
+  for (const s of S.sessions) {
+    const it = s.entries.find(e => e.ex === id);
+    if (!it || !it.sets.length) continue;
+    out.push({
+      t: new Date(s.date + 'T12:00:00').getTime(),
+      max: Math.max(...it.sets.map(x => x.w || 0)),
+      reps: it.sets.reduce((a, x) => a + (x.r || 0), 0),
+    });
+  }
+  return out;
+}
+function weekStats(d = 7) {
+  const ss = inLast(d);
+  let sets = 0, kg = 0;
+  for (const s of ss) for (const e of s.entries) for (const x of e.sets) {
+    sets++; if (!ex(e.ex).sec) kg += (x.w || 0) * (x.r || 0);
+  }
+  return { days: ss.length, sets, kg };
+}
+// شو تطوّر وشو واقف مكانه، بمقارنة آخر جلستين لكل تمرين
+function changes(d = 7) {
+  const up = [], flat = [];
+  const ids = [...new Set(inLast(d).flatMap(s => s.entries.map(e => e.ex)))];
+  for (const id of ids) {
+    const h = exHistory(id); if (h.length < 2) continue;
+    const a = h[h.length - 2], b = h[h.length - 1];
+    if (b.max > a.max) up.push({ id, from: a.max, to: b.max });
+    else if (b.max === a.max && b.reps > a.reps) up.push({ id, from: a.reps, to: b.reps, reps: true });
+    else if (b.max === a.max) flat.push({ id, at: b.max });
+  }
+  return { up, flat };
+}
+// الرقم المستدير التالي الذي يستحق أن يكون هدفاً
+const nextGoal = w => { const s = w < 20 ? 5 : w < 60 ? 10 : 20; return Math.floor(w / s) * s + s; };
+
+// بمعدل تطوّرك الحالي، متى توصل الهدف؟
+function projection(id) {
+  const h = exHistory(id).filter(x => x.max > 0);
+  if (h.length < 3) return null;
+  const first = h[0], last = h[h.length - 1];
+  const weeks = (last.t - first.t) / (7 * 864e5);
+  if (weeks < 1.5 || last.max <= first.max) return null;
+  const rate = (last.max - first.max) / weeks;
+  const goal = nextGoal(last.max);
+  const n = Math.ceil((goal - last.max) / rate);
+  if (!isFinite(n) || n < 1 || n > 78) return null;
+  return { now: last.max, goal, weeks: n, rate };
+}
+function allProjections() {
+  const ids = [...new Set(Object.values(PROGRAM).flatMap(p => p.items.map(i => i[0])))];
+  return ids.map(id => ({ id, p: projection(id) })).filter(x => x.p)
+            .sort((a, b) => a.p.weeks - b.p.weeks).slice(0, 5);
 }
 
 /* ملاحظات التمارين — تبقى محفوظة بين التمارين */
@@ -167,7 +255,8 @@ let page = 'home';
 // إعادة الرسم تحافظ على موضعك في الصفحة. مرّر true فقط عند الانتقال لشاشة أخرى.
 function render(toTop) {
   const y = window.scrollY;
-  ({ home, workout, log, ask }[S.active && page !== 'ask' ? 'workout' : page])();
+  const OVERLAY = ['ask', 'report'];   // شاشات تُعرض حتى لو في تمرين شغّال
+  ({ home, workout, log, ask, report }[S.active && !OVERLAY.includes(page) ? 'workout' : page])();
   window.scrollTo(0, toTop ? 0 : y);
 }
 const go = p => { page = p; render(true); };
@@ -196,9 +285,18 @@ function home() {
     }).join('')}
   </div>
 
+  <button class="rowlink" onclick="go('report')">
+    <span>تقرير الأسبوع</span>
+    <i>${S.sessions.length ? weekStats(7).days + ' تمارين آخر ٧ أيام' : 'ابدأ لتشوفه'}</i>
+  </button>
+
   <div class="setting">
     <span>مدة الراحة</span>
     <input type="number" inputmode="numeric" value="${S.rest}" onchange="S.rest=Math.max(10,+this.value||90);save()">
+  </div>
+  <div class="setting">
+    <span>وزن البار الفاضي</span>
+    <input type="number" inputmode="decimal" step="0.5" value="${S.bar}" onchange="S.bar=Math.max(0,+this.value||20);save()">
   </div>`;
 }
 
@@ -283,8 +381,16 @@ function exSection(i) {
           <button class="tick ${s.done ? 'on' : ''}" onclick="tick(${i},${j})">✓</button>
           ${trash(`delSet(${i},${j})`, 'حذف المجموعة')}
         </div>`).join('')}
+      ${e.bar ? (barOpen === i ? `
+        <div class="plates">
+          <div class="prow"><span>الوزن الكلي</span>
+            <input type="number" inputmode="decimal" id="barIn" value="${barVal || it.sets.find(s => !s.done)?.w || it.sets[0].w}"
+                   oninput="barVal=+this.value; $('#barOut').textContent=plateText(barVal)"></div>
+          <div class="pout" id="barOut">${esc(plateText(barVal || it.sets.find(s => !s.done)?.w || it.sets[0].w))}</div>
+        </div>` : '') : ''}
       <div class="exfoot"><button onclick="addSet(${i})">إضافة مجموعة</button>${
-        note || noteOpen === it.ex ? '' : `<button onclick="startNote('${it.ex}')">إضافة ملاحظة</button>`}</div>
+        note || noteOpen === it.ex ? '' : `<button onclick="startNote('${it.ex}')">إضافة ملاحظة</button>`}${
+        e.bar ? `<button onclick="toggleBar(${i})">${barOpen === i ? 'إخفاء توزيع الأوزان' : 'توزيع الأوزان'}</button>` : ''}</div>
     </section>`;
 }
 
@@ -297,6 +403,12 @@ function put(i, j, f, v) { S.active.entries[i].sets[j][f] = Math.max(0, +v || 0)
 function addSet(i) {
   const st = S.active.entries[i].sets, l = st[st.length - 1];
   st.push({ w: l.w, r: l.r, done: false }); save(); render();
+}
+let barOpen = -1, barVal = 0;
+function toggleBar(i) {
+  if (barOpen === i) { barOpen = -1; }
+  else { barOpen = i; const st = S.active.entries[i].sets; barVal = (st.find(s => !s.done) || st[0]).w; }
+  render();
 }
 function delSet(i, j) {
   const st = S.active.entries[i].sets;
@@ -443,6 +555,86 @@ function restore(inp) {
     } catch (e) { msg('الملف غير صالح'); }
   };
   r.readAsText(f);
+}
+
+/* ===== تقرير الأسبوع ===== */
+let repBusy = false;
+function report() {
+  const w = weekStats(7), prev = weekStats(14);
+  const ch = changes(7), pr = allProjections();
+  const prevKg = prev.kg - w.kg, prevDays = prev.days - w.days;
+  const rep = S.report;
+
+  $('#app').innerHTML = `
+  <header><h1>تقرير الأسبوع</h1><button class="link" onclick="go('home')">رجوع</button></header>
+
+  ${!S.sessions.length ? '<div class="empty">سجّل أول تمرين وبيبلّش التقرير يشتغل</div>' : `
+  <div class="lbl">آخر ٧ أيام</div>
+  <div class="rstats">
+    <div><b>${w.days}</b><i>تمارين</i>${prevDays ? `<u>${w.days - prevDays >= 0 ? '+' : ''}${w.days - prevDays}</u>` : ''}</div>
+    <div><b>${w.sets}</b><i>مجموعة</i></div>
+    <div><b>${nK(w.kg)}</b><i>كغم مرفوع</i>${prevKg ? `<u>${w.kg - prevKg >= 0 ? '+' : ''}${nK(w.kg - prevKg)}</u>` : ''}</div>
+  </div>
+
+  ${ch.up.length ? `<div class="lbl">تطوّرت</div>
+  <div class="rlist">${ch.up.map(c => `<div class="rrow"><span>${esc(ex(c.id).ar)}</span>
+    <b>${n1(c.from)} ← ${n1(c.to)}${c.reps ? ' عدة' : ''}</b></div>`).join('')}</div>` : ''}
+
+  ${ch.flat.length ? `<div class="lbl">واقف مكانه</div>
+  <div class="rlist">${ch.flat.map(c => `<div class="rrow"><span>${esc(ex(c.id).ar)}</span>
+    <b class="mut">${n1(c.at)} كغم</b></div>`).join('')}</div>` : ''}
+
+  ${pr.length ? `<div class="lbl">بهالمعدل، رح توصل</div>
+  <div class="rlist">${pr.map(x => `<div class="rrow proj">
+    <span>${esc(ex(x.id).ar)}</span>
+    <b>${n1(x.p.goal)} كغم</b>
+    <u>خلال ${x.p.weeks === 1 ? 'أسبوع' : x.p.weeks === 2 ? 'أسبوعين' : x.p.weeks + ' أسابيع'}
+       · الآن ${n1(x.p.now)}</u></div>`).join('')}</div>
+  <p class="muted sm">التوقّع مبني على سرعة تطوّرك الفعلية. كل ما داومت، كل ما قرب.</p>`
+  : '<p class="muted sm">التوقّعات بتظهر بعد ٣ تمارين على الأقل لنفس التمرين.</p>'}
+
+  <div class="lbl">تحليل المدرب</div>
+  ${rep ? `<div class="aibox">${fmtAi(rep.text)}<div class="raw2">${esc(fmt(rep.date))}</div></div>` : ''}
+  <button class="btn ${rep ? 'quiet' : ''}" id="repBtn" onclick="makeReport()" ${repBusy ? 'disabled' : ''}>
+    ${repBusy ? 'المدرب عم يقرأ أرقامك...' : rep ? 'حدّث التحليل' : 'اطلب تحليل المدرب'}</button>
+  ${!S.key ? '<p class="muted sm">بدّه تفعيل المساعد مرة وحدة من صفحة «اسأل».</p>' : ''}
+  `}`;
+}
+
+async function makeReport() {
+  if (!S.key) { msg('فعّل المساعد أول من صفحة اسأل'); return go('ask'); }
+  if (repBusy) return;
+  repBusy = true; render();
+  try {
+    const t = await gemini([{ text: reportPrompt() }]);
+    S.report = { date: todayKey(), text: t };
+  } catch (e) { msg(arErr(e.message)); }
+  repBusy = false; save(); render();
+}
+
+function reportPrompt() {
+  const w = weekStats(7), p2 = weekStats(14), ch = changes(7);
+  const last = S.sessions.slice(-8).map(s =>
+    `${s.date} (${PROGRAM[s.day] ? PROGRAM[s.day].name : s.day}): ` +
+    s.entries.map(e => `${ex(e.ex).ar} ${e.sets.map(x => x.w + '×' + x.r).join(',')}`).join(' | ')).join('\n');
+  const notes = Object.entries(S.notes || {}).map(([k, v]) => `${ex(k).ar}: ${v}`).join(' | ');
+  return `اكتب تقريراً أسبوعياً قصيراً لهذا المتدرّب بالعربية العامية الأردنية.
+
+أرقام آخر ٧ أيام: ${w.days} تمارين، ${w.sets} مجموعة، ${Math.round(w.kg)} كغم إجمالي.
+الأسبوع اللي قبله: ${p2.days - w.days} تمارين، ${Math.round(p2.kg - w.kg)} كغم.
+تطوّر فيها: ${ch.up.map(c => `${ex(c.id).ar} ${c.from}→${c.to}`).join('، ') || 'لا شيء'}
+واقفة مكانها: ${ch.flat.map(c => `${ex(c.id).ar} عند ${c.at}`).join('، ') || 'لا شيء'}
+ملاحظاته على الأجهزة: ${notes || 'لا يوجد'}
+
+تفاصيل آخر التمارين:
+${last || 'لا يوجد'}
+
+اكتب بالضبط بهذا الشكل وبدون مقدمات:
+سطر أول: تقييم الأسبوع بجملة واحدة صريحة.
+ثم "أحسن شي:" وسطر واحد.
+ثم "لازم تنتبه:" وسطر أو سطرين على التمارين الواقفة مكانها أو الحجم الناقص.
+ثم "الأسبوع الجاي:" وسطرين إجراءات محددة بأرقام (مثلاً: زِد السكوات لـ ٢٥ كغم، أو أضف مجموعة رابعة لتمرين كذا).
+لا تتجاوز ١٤٠ كلمة إجمالاً.`;
 }
 
 /* ===== المساعد الذكي (Gemini المجاني) ===== */
