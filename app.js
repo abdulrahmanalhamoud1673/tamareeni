@@ -611,7 +611,7 @@ async function makeReport() {
   repBusy = true; render();
   try {
     const t = await gemini([{ text: reportPrompt() }]);
-    S.report = { date: todayKey(), text: t };
+    S.report = { date: today(), text: t };
   } catch (e) { msg(arErr(e.message)); }
   repBusy = false; save(); render();
 }
