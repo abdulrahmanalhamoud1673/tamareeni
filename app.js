@@ -147,6 +147,8 @@ const setText = (id, s) => ex(id).sec ? `${s.r} ث` : ex(id).bw ? `${s.r}` : `${
 const PLATES = [20, 15, 10, 5, 2.5, 1.25];
 const nP = v => String(Math.round(v * 100) / 100);   // 1.25 تبقى 1.25 مش 1.3
 const nK = v => Math.round(v).toLocaleString('en-US');  // فواصل الآلاف
+// صيغة الجمع بالعربي: ١ / ٢ / ٣-١٠ / ١١+
+const plur = (n, one, two, few, many) => n === 1 ? one : n === 2 ? two : `${n} ${n <= 10 ? few : many}`;
 function plateSplit(total, bar) {
   bar = bar || S.bar || 20;
   if (!(total > 0)) return { err: 'اكتب الوزن الكلي' };
@@ -287,7 +289,9 @@ function home() {
 
   <button class="rowlink" onclick="go('report')">
     <span>تقرير الأسبوع</span>
-    <i>${S.sessions.length ? weekStats(7).days + ' تمارين آخر ٧ أيام' : 'ابدأ لتشوفه'}</i>
+    <i>${S.sessions.length
+      ? plur(weekStats(7).days, 'تمرين واحد', 'تمرينان', 'تمارين', 'تمريناً') + ' آخر ٧ أيام'
+      : 'ابدأ لتشوفه'}</i>
   </button>
 
   <div class="setting">
@@ -571,8 +575,8 @@ function report() {
   ${!S.sessions.length ? '<div class="empty">سجّل أول تمرين وبيبلّش التقرير يشتغل</div>' : `
   <div class="lbl">آخر ٧ أيام</div>
   <div class="rstats">
-    <div><b>${w.days}</b><i>تمارين</i>${prevDays ? `<u>${w.days - prevDays >= 0 ? '+' : ''}${w.days - prevDays}</u>` : ''}</div>
-    <div><b>${w.sets}</b><i>مجموعة</i></div>
+    <div><b>${w.days}</b><i>${w.days === 1 ? 'تمرين' : w.days <= 10 ? 'تمارين' : 'تمريناً'}</i>${prevDays ? `<u>${w.days - prevDays >= 0 ? '+' : ''}${w.days - prevDays}</u>` : ''}</div>
+    <div><b>${w.sets}</b><i>${w.sets === 1 ? 'مجموعة' : w.sets <= 10 ? 'مجموعات' : 'مجموعة'}</i></div>
     <div><b>${nK(w.kg)}</b><i>كغم مرفوع</i>${prevKg ? `<u>${w.kg - prevKg >= 0 ? '+' : ''}${nK(w.kg - prevKg)}</u>` : ''}</div>
   </div>
 
