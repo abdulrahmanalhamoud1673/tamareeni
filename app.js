@@ -700,10 +700,11 @@ function askSetup() {
     <li>افتح <b>aistudio.google.com/apikey</b> وسجّل دخول بحساب جوجل</li>
     <li>من القائمة اليسرى اضغط <b>API Keys</b> — مش Projects</li>
     <li>إذا ما عندك مفتاح، اضغط <b>Create API key</b></li>
-    <li>اضغط أيقونة النسخ اللي جنب المفتاح بالجدول، والصقه هنا</li>
+    <li>اضغط على المفتاح بالجدول، وبنافذة <b>API key details</b> اضغط <b>Copy key</b></li>
   </ol>
-  <div class="note2">المفتاح يبدأ بـ <b>AIza</b> — مثال: <span dir="ltr">AIzaSyD…</span><br>
-  انتبه: <span dir="ltr">gen-lang-client-…</span> هذا رقم المشروع مش المفتاح، وبيكون بصفحة Projects.</div>
+  <div class="note2">المفتاح بيبدأ بـ <b>AQ.</b> أو <b>AIza</b> — الاثنين مقبولين.<br>
+  انتبه بنفس النافذة: <span dir="ltr">Project name</span> و<span dir="ltr">Project number</span>
+  هدول أرقام المشروع مش المفتاح. الصح هو اللي تحت كلمة <span dir="ltr">API Key</span>.</div>
   <input type="text" id="keyIn" class="keyin" placeholder="AIzaSy..." value="${esc(S.key || '')}">
   <div class="keyerr" id="keyErr"></div>
   <button class="btn" id="keyBtn" onclick="saveKey()">تفعيل</button>
@@ -711,20 +712,20 @@ function askSetup() {
   عند الضغط على تفعيل بنجرّبه فوراً ونتأكد إنه شغّال.</p>`;
 }
 
-// شكل مفتاح Gemini: يبدأ بـ AIza وطوله ٣٩ خانة تقريباً
-const KEY_RE = /^AIza[A-Za-z0-9_-]{30,}$/;
+// جوجل يصدر صيغتين للمفتاح: القديمة AIza… والجديدة AQ.…
+const KEY_RE = /^(AIza[A-Za-z0-9_-]{30,}|AQ\.[A-Za-z0-9_.-]{20,})$/;
 
 // ترجمة أخطاء جوجل لرسائل مفهومة وقابلة للتنفيذ
 function arErr(m) {
   m = String(m || '');
   if (/UNAUTHENTICATED|invalid authentication credentials|OAuth 2 access token|login cookie/i.test(m))
-    return 'اللي حطيته مش مفتاح API — يبدو إنه توكن تسجيل دخول. المفتاح الصحيح يبدأ بـ AIza، انسخه من aistudio.google.com/apikey';
+    return 'جوجل رفض المفتاح. تأكد إنك نسخته كامل من نافذة API key details بضغطة Copy key، بدون أي حرف ناقص. وإذا ضلّت، احذفه واعمل مفتاح جديد.';
   if (/API key not valid|API_KEY_INVALID|API key expired/i.test(m))
     return 'المفتاح غير صحيح أو منتهي. أنشئ مفتاحاً جديداً من aistudio.google.com/apikey';
   if (/has not been used|SERVICE_DISABLED|PERMISSION_DENIED|blocked|suspended/i.test(m))
     return 'هذا المفتاح ما عليه صلاحية. أنشئ مفتاحاً جديداً من aistudio.google.com/apikey مباشرة (مش من Google Cloud).';
-  if (/RESOURCE_EXHAUSTED|Quota exceeded|rate limit/i.test(m))
-    return 'خلص حدّك المجاني لهاليوم. جرّب بعد شوي أو بكرا.';
+  if (/RESOURCE_EXHAUSTED|Quota exceeded|rate limit|429/i.test(m))
+    return 'جوجل رفض الطلب بسبب حد الاستخدام. غالباً المفتاح جديد ولسه ما انفعّل — استنى دقيقتين وجرّب كمان مرة. إذا ضلّت، اعمل مفتاح جديد.';
   if (/user location|not available in your country|location is not supported/i.test(m))
     return 'الخدمة مش متاحة من موقعك حالياً.';
   if (/Failed to fetch|NetworkError|network|ERR_/i.test(m))
@@ -739,14 +740,14 @@ async function saveKey() {
   if (!k) { err.textContent = 'الصق المفتاح أولاً.'; return; }
   // امنع الخطأ قبل ما نرسل أصلاً، واشرح بالضبط شو لصق
   if (!KEY_RE.test(k)) {
-    let what = `اللي لصقته يبدأ بـ «${esc(k.slice(0, 8))}…» — هذا شي ثاني من الصفحة.`;
-    if (/^gen-lang-client/i.test(k)) what = 'هذا <b>Project ID</b> (رقم المشروع) مش المفتاح — إنت بصفحة Projects.';
+    let what = `اللي لصقته يبدأ بـ «${esc(k.slice(0, 8))}…» — هذا مش شكل المفتاح.`;
+    if (/^gen-lang-client/i.test(k)) what = 'هذا <b>Project ID</b> (رقم المشروع) مش المفتاح.';
     else if (/^projects\//i.test(k) || /^\d{6,}$/.test(k)) what = 'هذا اسم أو رقم المشروع، مش المفتاح.';
-    else if (/^AQ\./i.test(k)) what = 'هذا توكن تسجيل دخول، مش المفتاح.';
     err.innerHTML = `${what}<br><br>
-      المفتاح موجود في صفحة <b>API Keys</b> — من القائمة اليسرى في AI Studio، فوق Projects.<br>
-      اضغط عليها، وبتلاقي مفتاحك بالجدول. انسخه من أيقونة النسخ اللي جنبه.<br>
-      لازم يبدأ بـ <b>AIza</b> وطوله ٣٩ خانة تقريباً.`;
+      بصفحة <b>API Keys</b>، اضغط على مفتاحك بالجدول وبتفتح نافذة
+      <b>API key details</b>. انسخ اللي تحت كلمة <b>API Key</b> بالضبط
+      (أو اضغط زر <b>Copy key</b>).<br>
+      المفتاح بيبدأ بـ <b>AQ.</b> أو <b>AIza</b>.`;
     return;
   }
   const old = S.key; S.key = k;
@@ -822,12 +823,15 @@ const SYS = 'أنت مدرب حديد محترف. جاوب بالعربية ال
   + 'إذا أُرسلت صورة جهاز، حدّد اسمه وأي عضلة يستهدف وكيف يُستخدم صح. '
   + 'لا تعطِ نصائح دوائية أو منشطات، وإذا ذُكرت إصابة انصح بمراجعة مختص.';
 
+// نجرّب أكثر من نموذج: بعض المفاتيح المجانية ما عندها وصول لكلها
+const MODELS = ['gemini-2.5-flash', 'gemini-flash-latest', 'gemini-2.0-flash', 'gemini-2.5-flash-lite'];
 async function gemini(parts) {
   let err = 'تعذّر الاتصال';
-  for (const m of ['gemini-2.5-flash', 'gemini-2.0-flash']) {
+  for (const m of MODELS) {
     try {
-      const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${encodeURIComponent(S.key)}`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
+      const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-goog-api-key': S.key },
         body: JSON.stringify({
           contents: [{ role: 'user', parts }],
           systemInstruction: { parts: [{ text: SYS }] },
