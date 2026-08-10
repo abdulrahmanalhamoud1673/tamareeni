@@ -1,19 +1,19 @@
 Add-Type -AssemblyName System.Drawing
 $base = 'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises'
-$tmp  = Join-Path $env:TEMP 'exCompare4'
+$tmp  = Join-Path $env:TEMP 'exCompare5'
 if (-not (Test-Path $tmp)) { New-Item -ItemType Directory -Path $tmp | Out-Null }
 
 $cands = @(
-  @{ label='A One-Arm DB Row (start)';   id='One-Arm_Dumbbell_Row'; n=0 },
-  @{ label='A One-Arm DB Row (end)';     id='One-Arm_Dumbbell_Row'; n=1 },
-  @{ label='B Straight-Arm Pulldown (s)';id='Straight-Arm_Pulldown'; n=0 },
-  @{ label='B Straight-Arm Pulldown (e)';id='Straight-Arm_Pulldown'; n=1 },
-  @{ label='C Face Pull (start)';        id='Face_Pull'; n=0 },
-  @{ label='C Face Pull (end)';          id='Face_Pull'; n=1 },
-  @{ label='D Reverse Flyes DB (start)'; id='Reverse_Flyes'; n=0 },
-  @{ label='D Reverse Flyes DB (end)';   id='Reverse_Flyes'; n=1 },
-  @{ label='E Bent Over DB Row (start)'; id='Bent_Over_Two-Dumbbell_Row'; n=0 },
-  @{ label='E Bent Over DB Row (end)';   id='Bent_Over_Two-Dumbbell_Row'; n=1 }
+  @{ label='A Leverage Iso Row (start)';   id='Leverage_Iso_Row'; n=0 },
+  @{ label='A Leverage Iso Row (end)';     id='Leverage_Iso_Row'; n=1 },
+  @{ label='B Lying T-Bar Row (start)';    id='Lying_T-Bar_Row'; n=0 },
+  @{ label='B Lying T-Bar Row (end)';      id='Lying_T-Bar_Row'; n=1 },
+  @{ label='C Smith Bent Over Row (start)';id='Smith_Machine_Bent_Over_Row'; n=0 },
+  @{ label='C Smith Bent Over Row (end)';  id='Smith_Machine_Bent_Over_Row'; n=1 },
+  @{ label='D Leverage Shrug (start)';     id='Leverage_Shrug'; n=0 },
+  @{ label='D Leverage Shrug (end)';       id='Leverage_Shrug'; n=1 },
+  @{ label='E Smith Upright Row (start)';  id='Smith_Machine_Upright_Row'; n=0 },
+  @{ label='E Smith Upright Row (end)';    id='Smith_Machine_Upright_Row'; n=1 }
 )
 $cols=2; $cw=330; $ch=220; $lab=24
 $rows=[Math]::Ceiling($cands.Count/$cols)

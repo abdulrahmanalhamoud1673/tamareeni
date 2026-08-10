@@ -18,6 +18,9 @@
 
   "lat_pulldown": "Wide-Grip_Lat_Pulldown",
   "low_row_cable": "Seated_Cable_Rows",
+  "iso_row_machine": "Leverage_Iso_Row",
+  "tbar_row_machine": "Lying_T-Bar_Row",
+  "shrug_machine": "Leverage_Shrug",
   "db_row_one_arm": "One-Arm_Dumbbell_Row",
   "straight_arm_pulldown": "Straight-Arm_Pulldown",
   "rear_delt_fly_db": "Reverse_Flyes",

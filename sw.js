@@ -1,4 +1,4 @@
-const CACHE = 'tamareeni-v21';
+const CACHE = 'tamareeni-v22';
 const ASSETS = ['./', './index.html', './app.js', './manifest.json', './icon-192.png', './icon-512.png'];
 
 // صور التمارين — تُخزّن مسبقاً حتى تظهر بدون إنترنت
@@ -6,6 +6,7 @@ const EX_IDS = [
   'incline_bar_press','cable_press','cable_fly','decline_bar_press','dips','flat_db_press',
   'dip_machine','reverse_pushdown','cable_one_arm_ext','close_grip_bench','skull_crusher','rope_overhead',
   'single_arm_oh_ext','rope_pushdown','tri_ext_machine','lat_pulldown','low_row_cable',
+  'iso_row_machine','tbar_row_machine','shrug_machine',
   'db_row_one_arm','straight_arm_pulldown','rear_delt_fly_db',
   'row_hammer_high','high_row_cable','reverse_fly','hyper_ext','trx_row','lateral_raise',
   'shoulder_press_ham','upright_row','shoulder_press_n','shrugs','alt_curl_15','cable_curl',

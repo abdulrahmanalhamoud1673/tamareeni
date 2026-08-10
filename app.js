@@ -12,6 +12,9 @@ const EX = {
   cable_one_arm_ext: { ar: 'سحب كيبل بذراع واحدة', en: 'Cable one arm extension', inc: 1 },
 
   // تمارين قديمة — باقية هنا فقط لتظهر بأسمائها في السجل
+  db_row_one_arm:       { ar: 'تجديف دمبل بذراع واحدة', en: 'One arm db row', inc: 2 },
+  straight_arm_pulldown:{ ar: 'سحب بذراع مستقيمة', en: 'Straight arm pulldown', inc: 2.5 },
+  rear_delt_fly_db:     { ar: 'رفرفة خلفية بالدمبل', en: 'Rear delt fly (traps)', inc: 1 },
   row_hammer_high:   { ar: 'تجديف هامر قبضة عالية', en: 'Row hammer strength high grip', inc: 2.5 },
   high_row_cable:    { ar: 'تجديف كيبل عالي', en: 'High row cable', inc: 2.5 },
   reverse_fly:       { ar: 'تفتيح خلفي', en: 'Reverse fly (traps)', inc: 1 },
@@ -24,9 +27,9 @@ const EX = {
 
   lat_pulldown:      { ar: 'سحب أمامي عالي', en: 'Lat pull down', inc: 1 },
   low_row_cable:     { ar: 'تجديف كيبل منخفض', en: 'Low row cable (N)', inc: 1 },
-  db_row_one_arm:       { ar: 'تجديف دمبل بذراع واحدة', en: 'One arm db row', inc: 2 },
-  straight_arm_pulldown:{ ar: 'سحب بذراع مستقيمة', en: 'Straight arm pulldown', inc: 2.5 },
-  rear_delt_fly_db:     { ar: 'رفرفة خلفية بالدمبل', en: 'Rear delt fly (traps)', inc: 1 },
+  iso_row_machine:      { ar: 'جهاز التجديف', en: 'Iso row machine', inc: 2.5 },
+  tbar_row_machine:     { ar: 'جهاز التي بار', en: 'T-bar row machine', inc: 2.5 },
+  shrug_machine:        { ar: 'جهاز هز الأكتاف', en: 'Shrug machine (traps)', inc: 5 },
   hyper_ext:         { ar: 'تمديد أسفل الظهر', en: 'Hyper ext', inc: 2.5 },
   trx_row:           { ar: 'تجديف TRX', en: 'TRX', bw: true },
 
@@ -68,9 +71,9 @@ const PROGRAM = {
   d2: { name: 'ظهر', items: [
     ['lat_pulldown',    [[6,12],[6,10],[6,8]]],
     ['low_row_cable',   [[6,10],[6,10],[7,10]]],
-    ['db_row_one_arm',        [[12,12],[12,10],[12,8]]],
-    ['straight_arm_pulldown', [[15,12],[15,12],[15,12]]],
-    ['rear_delt_fly_db',      [[5,15],[5,15],[5,15]]],
+    ['iso_row_machine',  [[25,12],[25,10],[25,8]]],
+    ['tbar_row_machine', [[20,12],[20,12],[20,12]]],
+    ['shrug_machine',    [[30,15],[30,15],[30,15]]],
     ['hyper_ext',       [[10,15],[10,15],[10,15]]],
     ['trx_row',         [[0,10],[0,10],[0,10]]],
   ]},
