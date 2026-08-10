@@ -1,17 +1,19 @@
 Add-Type -AssemblyName System.Drawing
 $base = 'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises'
-$tmp  = Join-Path $env:TEMP 'exCompare3'
+$tmp  = Join-Path $env:TEMP 'exCompare4'
 if (-not (Test-Path $tmp)) { New-Item -ItemType Directory -Path $tmp | Out-Null }
 
 $cands = @(
-  @{ label='A Close-Grip Bench (start)';   id='Close-Grip_Barbell_Bench_Press'; n=0 },
-  @{ label='A Close-Grip Bench (end)';     id='Close-Grip_Barbell_Bench_Press'; n=1 },
-  @{ label='B Reverse Grip Pushdown (st)'; id='Reverse_Grip_Triceps_Pushdown'; n=0 },
-  @{ label='B Reverse Grip Pushdown (en)'; id='Reverse_Grip_Triceps_Pushdown'; n=1 },
-  @{ label='C Dip Machine (start)';        id='Dip_Machine'; n=0 },
-  @{ label='C Dip Machine (end)';          id='Dip_Machine'; n=1 },
-  @{ label='D V-Bar Pushdown (start)';     id='Triceps_Pushdown_-_V-Bar_Attachment'; n=0 },
-  @{ label='D V-Bar Pushdown (end)';       id='Triceps_Pushdown_-_V-Bar_Attachment'; n=1 }
+  @{ label='A One-Arm DB Row (start)';   id='One-Arm_Dumbbell_Row'; n=0 },
+  @{ label='A One-Arm DB Row (end)';     id='One-Arm_Dumbbell_Row'; n=1 },
+  @{ label='B Straight-Arm Pulldown (s)';id='Straight-Arm_Pulldown'; n=0 },
+  @{ label='B Straight-Arm Pulldown (e)';id='Straight-Arm_Pulldown'; n=1 },
+  @{ label='C Face Pull (start)';        id='Face_Pull'; n=0 },
+  @{ label='C Face Pull (end)';          id='Face_Pull'; n=1 },
+  @{ label='D Reverse Flyes DB (start)'; id='Reverse_Flyes'; n=0 },
+  @{ label='D Reverse Flyes DB (end)';   id='Reverse_Flyes'; n=1 },
+  @{ label='E Bent Over DB Row (start)'; id='Bent_Over_Two-Dumbbell_Row'; n=0 },
+  @{ label='E Bent Over DB Row (end)';   id='Bent_Over_Two-Dumbbell_Row'; n=1 }
 )
 $cols=2; $cw=330; $ch=220; $lab=24
 $rows=[Math]::Ceiling($cands.Count/$cols)

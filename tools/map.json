@@ -18,6 +18,9 @@
 
   "lat_pulldown": "Wide-Grip_Lat_Pulldown",
   "low_row_cable": "Seated_Cable_Rows",
+  "db_row_one_arm": "One-Arm_Dumbbell_Row",
+  "straight_arm_pulldown": "Straight-Arm_Pulldown",
+  "rear_delt_fly_db": "Reverse_Flyes",
   "row_hammer_high": "Leverage_High_Row",
   "high_row_cable": "Kneeling_High_Pulley_Row",
   "reverse_fly": "Reverse_Machine_Flyes",
