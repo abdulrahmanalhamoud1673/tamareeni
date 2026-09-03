@@ -1092,5 +1092,13 @@ async function gemini(parts, history, opts) {
 /* ===== الإقلاع ===== */
 seedInBody();
 render();
-if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('sw.js').catch(() => {});
+// المتصفح بشكل افتراضي بيفحص وجود نسخة جديدة من sw.js كل ٢٤ ساعة تقريباً بس —
+// حتى لو المستخدم سكّر التطبيق وفتحه ألف مرة. نفرض فحصاً فورياً كل ما يفتح الصفحة،
+// وإذا وصل تحديث ونحن مش وسط تمرين، نعيد التحميل تلقائياً حتى يشتغل الكود الجديد فوراً.
+if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+  navigator.serviceWorker.register('sw.js').then(reg => {
+    reg.update().catch(() => {});
+    navigator.serviceWorker.addEventListener('controllerchange', () => { if (!S.active) location.reload(); });
+  }).catch(() => {});
+}
 addEventListener('beforeunload', e => { if (S.active) { e.preventDefault(); e.returnValue = ''; } });
