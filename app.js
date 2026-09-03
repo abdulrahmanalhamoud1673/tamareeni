@@ -100,6 +100,9 @@ const PROGRAM = {
   ]},
 };
 
+// لون مميز لكل يوم تمرين (يُقرأ من متغيّرات CSS بالجذر)
+const DAY_ACC = { d1: 'var(--d1)', d2: 'var(--d2)', d3: 'var(--d3)', d4: 'var(--d4)' };
+
 /* ===== بيانات آخر بطاقة InBody (٣٠ أغسطس ٢٠٢٦) ===== */
 const HEIGHT_CM = 178.5;
 const INBODY_CARD = {
@@ -133,9 +136,10 @@ const n1 = v => String(Math.round(v * 10) / 10);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[c]));
 const ex = id => EX[id] || { ar: id, inc: 2.5 };
 
-function msg(t) {
+function msg(t, kind) {
   const el = $('#msg'); el.textContent = t; el.classList.add('show');
-  clearTimeout(el._h); el._h = setTimeout(() => el.classList.remove('show'), 2200);
+  el.classList.toggle('pr', kind === 'pr');
+  clearTimeout(el._h); el._h = setTimeout(() => { el.classList.remove('show'); el.classList.remove('pr'); }, 2200);
 }
 function buzz(p) { if (navigator.vibrate) navigator.vibrate(p); }
 let AC;
@@ -300,7 +304,7 @@ function home() {
   <div class="daylist">
     ${keys.map(k => {
       const l = done.filter(s => s.day === k).pop();
-      return `<button class="day" onclick="start('${k}')">
+      return `<button class="day" style="--dc:${DAY_ACC[k]}" onclick="start('${k}')">
         <b>${PROGRAM[k].name}</b>
         <span>${l ? ago(l.date) : k === next ? 'ابدأ من هنا' : '—'}</span>
       </button>`;
@@ -348,12 +352,12 @@ function workout() {
   const a = S.active;
   $('#app').innerHTML = `
   <header>
-    <div><h1>${PROGRAM[a.day].name}</h1><div class="sub" id="clock">0:00</div></div>
+    <div><h1 style="color:${DAY_ACC[a.day] || 'var(--tx)'}">${PROGRAM[a.day].name}</h1><div class="sub" id="clock">0:00</div></div>
     <button class="link" onclick="finish()">إنهاء</button>
   </header>
 
   ${groupSS(a.entries).map(g =>
-    g.ss ? `<div class="ssgroup"><div class="sslabel">${g.idx.length > 1
+    g.ss ? `<div class="ssgroup" style="--dc:${DAY_ACC[a.day]}"><div class="sslabel">${g.idx.length > 1
               ? 'سوبرست — بدون راحة بين التمرينين' : 'سوبرست'}</div>${g.idx.map(exSection).join('')}</div>`
          : exSection(g.idx[0])).join('')}
 
@@ -449,6 +453,12 @@ function tick(i, j) {
   s.done = !s.done;
   if (s.done) {
     buzz(25);
+    // رقم قياسي: وزن أعلى من أي وزن سبق سجّلته بهذا التمرين بجلسات سابقة
+    const e = ex(it.ex);
+    if (!e.bw && !e.sec && s.w > 0) {
+      const h = exHistory(it.ex);
+      if (h.length && s.w > Math.max(...h.map(x => x.max))) msg('رقم قياسي جديد', 'pr');
+    }
     // داخل السوبرست: انتقل للتمرين التالي مباشرة بلا راحة
     const nx = S.active.entries[i + 1];
     const inSS = it.ss != null && nx && nx.ss === it.ss && nx.sets.some(x => !x.done);
@@ -601,23 +611,23 @@ function report() {
   ${!S.sessions.length ? '<div class="empty">سجّل أول تمرين وبيبلّش التقرير يشتغل</div>' : `
   <div class="lbl">آخر ٧ أيام</div>
   <div class="rstats">
-    <div><b>${w.days}</b><i>${w.days === 1 ? 'تمرين' : w.days <= 10 ? 'تمارين' : 'تمريناً'}</i>${prevDays ? `<u>${w.days - prevDays >= 0 ? '+' : ''}${w.days - prevDays}</u>` : ''}</div>
+    <div><b>${w.days}</b><i>${w.days === 1 ? 'تمرين' : w.days <= 10 ? 'تمارين' : 'تمريناً'}</i>${prevDays ? `<u class="${w.days - prevDays > 0 ? 'pos' : ''}">${w.days - prevDays >= 0 ? '+' : ''}${w.days - prevDays}</u>` : ''}</div>
     <div><b>${w.sets}</b><i>${w.sets === 1 ? 'مجموعة' : w.sets <= 10 ? 'مجموعات' : 'مجموعة'}</i></div>
-    <div><b>${nK(w.kg)}</b><i>كغم مرفوع</i>${prevKg ? `<u>${w.kg - prevKg >= 0 ? '+' : ''}${nK(w.kg - prevKg)}</u>` : ''}</div>
+    <div><b>${nK(w.kg)}</b><i>كغم مرفوع</i>${prevKg ? `<u class="${w.kg - prevKg > 0 ? 'pos' : ''}">${w.kg - prevKg >= 0 ? '+' : ''}${nK(w.kg - prevKg)}</u>` : ''}</div>
   </div>
 
   ${ch.up.length ? `<div class="lbl">تطوّرت</div>
   <div class="rlist">${ch.up.map(c => `<div class="rrow"><span>${esc(ex(c.id).ar)}</span>
-    <b>${n1(c.from)} ← ${n1(c.to)}${c.reps ? ' عدة' : ''}</b></div>`).join('')}</div>` : ''}
+    <b class="good">${n1(c.from)} ← ${n1(c.to)}${c.reps ? ' عدة' : ''}</b></div>`).join('')}</div>` : ''}
 
   ${ch.flat.length ? `<div class="lbl">واقف مكانه</div>
   <div class="rlist">${ch.flat.map(c => `<div class="rrow"><span>${esc(ex(c.id).ar)}</span>
-    <b class="mut">${n1(c.at)} كغم</b></div>`).join('')}</div>` : ''}
+    <b class="warn">${n1(c.at)} كغم</b></div>`).join('')}</div>` : ''}
 
   ${pr.length ? `<div class="lbl">بهالمعدل، رح توصل</div>
   <div class="rlist">${pr.map(x => `<div class="rrow proj">
     <span>${esc(ex(x.id).ar)}</span>
-    <b>${n1(x.p.goal)} كغم</b>
+    <b class="acc">${n1(x.p.goal)} كغم</b>
     <u>خلال ${x.p.weeks === 1 ? 'أسبوع' : x.p.weeks === 2 ? 'أسبوعين' : x.p.weeks + ' أسابيع'}
        · الآن ${n1(x.p.now)}</u></div>`).join('')}</div>
   <p class="muted sm">التوقّع مبني على سرعة تطوّرك الفعلية. كل ما داومت، كل ما قرب.</p>`

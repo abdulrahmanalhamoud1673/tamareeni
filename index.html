@@ -15,9 +15,16 @@
 <style>
 :root{
   --bg:#ffffff; --tx:#111111; --mut:#8c8c8c; --line:#e6e6e6; --soft:#f6f6f6;
+  --acc:#0066ff; --acc-fg:#ffffff;         /* اللون التوقيعي: أزرق كهربائي */
+  --good:#16a34a; --warn:#d97706;          /* دلالات: تطوّر / انتبه */
+  --d1:#dc2626; --d2:#7c3aed; --d3:#d97706; --d4:#16a34a;  /* لون كل يوم تمرين */
 }
 @media (prefers-color-scheme: dark){
-  :root{ --bg:#0d0d0d; --tx:#f2f2f2; --mut:#8c8c8c; --line:#232323; --soft:#171717; }
+  :root{ --bg:#0d0d0d; --tx:#f2f2f2; --mut:#8c8c8c; --line:#232323; --soft:#171717;
+    --acc:#2f6fed;
+    --good:#4ade80; --warn:#fbbf24;
+    --d1:#f87171; --d2:#a78bfa; --d3:#fbbf24; --d4:#4ade80;
+  }
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;padding:0}
@@ -46,7 +53,7 @@ header .sub{color:var(--mut);font-size:14px;font-variant-numeric:tabular-nums}
 .ctx{color:var(--mut);font-size:13.5px;border:1px solid var(--line);border-radius:9px;padding:8px 13px;margin-bottom:4px}
 .chat{display:flex;flex-direction:column;gap:12px;margin:18px 0 8px;min-height:40vh}
 .m{max-width:88%;padding:11px 15px;border-radius:15px;font-size:15px;line-height:1.75;word-wrap:break-word}
-.m.me{align-self:flex-start;background:var(--tx);color:var(--bg);border-bottom-right-radius:4px}
+.m.me{align-self:flex-start;background:var(--acc);color:var(--acc-fg);border-bottom-right-radius:4px}
 .m.ai{align-self:flex-end;background:var(--soft);border:1px solid var(--line);border-bottom-left-radius:4px}
 .m.pend{opacity:.55}
 .m img{width:100%;max-width:210px;border-radius:9px;margin-bottom:7px;display:block}
@@ -71,7 +78,7 @@ header .sub{color:var(--mut);font-size:14px;font-variant-numeric:tabular-nums}
   border-radius:22px;padding:12px 17px;font-size:15px}
 .askbar button{width:44px;height:44px;flex:none;border-radius:50%;border:1px solid var(--line);
   background:none;display:grid;place-items:center;color:var(--tx)}
-.askbar button.send{background:var(--tx);color:var(--bg);border-color:var(--tx)}
+.askbar button.send{background:var(--acc);color:var(--acc-fg);border-color:var(--acc)}
 .keyin{width:100%;background:var(--soft);border:1px solid var(--line);border-radius:10px;
   padding:13px 15px;font-size:15px;direction:ltr;text-align:left;margin-top:6px}
 .askbtn{margin-top:0;margin-bottom:22px}
@@ -82,7 +89,7 @@ header .sub{color:var(--mut);font-size:14px;font-variant-numeric:tabular-nums}
 .day{
   display:flex;align-items:baseline;justify-content:space-between;gap:14px;
   width:100%;text-align:right;background:none;color:inherit;
-  border:1px solid var(--line);border-radius:12px;padding:18px 18px;
+  border:1px solid var(--line);border-inline-start:4px solid var(--dc,var(--line));border-radius:12px;padding:18px 18px;
 }
 .day:active{background:var(--soft)}
 .day b{font-size:18px;font-weight:600}
@@ -97,13 +104,13 @@ header .sub{color:var(--mut);font-size:14px;font-variant-numeric:tabular-nums}
   direction:ltr;unicode-bidi:isolate;white-space:nowrap}
 .last{color:var(--mut);font-size:14px;font-variant-numeric:tabular-nums;direction:rtl}
 .last em{font-style:normal;margin-inline-end:10px}
-.up{display:inline-block;color:var(--tx);border:1px solid var(--tx);border-radius:6px;
-  padding:0 8px;font-size:12px;margin-inline-start:10px;vertical-align:1px}
+.up{display:inline-block;color:var(--acc);border:1px solid var(--acc);border-radius:6px;
+  padding:0 8px;font-size:12px;margin-inline-start:10px;vertical-align:1px;font-weight:600}
 .note{color:var(--mut);font-size:13.5px;margin-top:5px;padding-inline-start:13px;position:relative;line-height:1.5}
 .note::before{content:'';position:absolute;right:0;top:8px;width:5px;height:5px;border-radius:50%;background:var(--mut)}
 .noteinput{width:100%;margin-top:6px;background:var(--soft);border:1px solid var(--line);
   border-radius:8px;padding:9px 12px;font-size:14px}
-.ssgroup{border-right:2px solid var(--tx);padding-right:16px;margin:6px 0}
+.ssgroup{border-right:2px solid var(--dc,var(--tx));padding-right:16px;margin:6px 0}
 .ssgroup .ex:last-of-type{border-bottom:0}
 .sslabel{color:var(--mut);font-size:12px;padding-top:22px}
 .head{display:flex;gap:14px;align-items:flex-start;margin-bottom:16px}
@@ -138,12 +145,12 @@ header .sub{color:var(--mut);font-size:14px;font-variant-numeric:tabular-nums}
 .num input::-webkit-inner-spin-button,.num input::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
 .num.flat{justify-content:center;color:var(--mut);font-size:14px;padding:11px 0}
 .tick{height:46px;border:1px solid var(--line);border-radius:10px;background:none;font-size:17px;color:var(--mut)}
-.tick.on{background:var(--tx);border-color:var(--tx);color:var(--bg)}
+.tick.on{background:var(--acc);border-color:var(--acc);color:var(--acc-fg)}
 .exfoot{margin-top:4px}
 .exfoot button{background:none;border:0;color:var(--mut);font-size:14px;padding:6px 12px 6px 0}
 
 /* ---------- أزرار ---------- */
-.btn{display:block;width:100%;background:var(--tx);color:var(--bg);border:0;
+.btn{display:block;width:100%;background:var(--acc);color:var(--acc-fg);border:0;
   border-radius:12px;padding:17px;font-size:17px;font-weight:600;margin-top:28px}
 .btn.quiet{background:none;color:var(--mut);border:1px solid var(--line);font-weight:400;margin-top:12px}
 .btn:active{opacity:.75}
@@ -157,7 +164,7 @@ header .sub{color:var(--mut);font-size:14px;font-variant-numeric:tabular-nums}
 #rest .c{color:var(--mut);font-size:14px;flex:1}
 #rest button{background:none;border:1px solid var(--line);border-radius:9px;padding:9px 15px;font-size:15px;color:var(--mut)}
 #track{height:2px;background:var(--line);margin-top:12px;max-width:560px;margin-inline:auto}
-#track i{display:block;height:100%;background:var(--tx);transition:width 1s linear}
+#track i{display:block;height:100%;background:var(--acc);transition:width 1s linear}
 
 /* ---------- السجل ---------- */
 .rec{border-bottom:1px solid var(--line);padding:16px 0}
@@ -197,15 +204,19 @@ header .sub{color:var(--mut);font-size:14px;font-variant-numeric:tabular-nums}
 /* ---------- التقرير ---------- */
 .rstats{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}
 .rstats div{border:1px solid var(--line);border-radius:12px;padding:14px 6px;text-align:center}
-.rstats b{display:block;font-size:21px;font-variant-numeric:tabular-nums}
+.rstats b{display:block;font-size:26px;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
 .rstats i{font-style:normal;font-size:11.5px;color:var(--mut)}
 .rstats u{display:block;text-decoration:none;font-size:11px;color:var(--mut);margin-top:4px;direction:ltr}
+.rstats u.pos{color:var(--good);font-weight:600}
 .rlist{border:1px solid var(--line);border-radius:12px;overflow:hidden}
 .rrow{display:flex;justify-content:space-between;align-items:baseline;gap:12px;
   padding:12px 15px;border-bottom:1px solid var(--line);font-size:15px}
 .rrow:last-child{border-bottom:0}
 .rrow b{font-variant-numeric:tabular-nums;white-space:nowrap;direction:ltr}
 .rrow b.mut{color:var(--mut);font-weight:400}
+.rrow b.good{color:var(--good);font-weight:700}
+.rrow b.warn{color:var(--warn);font-weight:400}
+.rrow b.acc{color:var(--acc);font-weight:700}
 .rrow.proj{flex-wrap:wrap}
 .rrow u{flex-basis:100%;text-decoration:none;font-size:12px;color:var(--mut);margin-top:3px}
 .aibox{border:1px solid var(--line);border-radius:12px;padding:15px 17px;font-size:15px;line-height:1.85}
@@ -226,9 +237,10 @@ header .sub{color:var(--mut);font-size:14px;font-variant-numeric:tabular-nums}
 .seqrow em{font-style:normal;display:block;margin-bottom:3px;color:var(--tx);font-weight:600;font-size:12.5px}
 
 #msg{position:fixed;left:50%;transform:translate(-50%,14px);bottom:100px;z-index:40;opacity:0;
-  background:var(--tx);color:var(--bg);padding:11px 20px;border-radius:10px;font-size:15px;
+  background:var(--tx);color:var(--bg);padding:11px 20px;border-radius:10px;font-size:15px;font-weight:600;
   transition:.2s;pointer-events:none;max-width:88vw;text-align:center}
 #msg.show{opacity:1;transform:translate(-50%,0)}
+#msg.pr{background:var(--acc);color:var(--acc-fg)}
 </style>
 </head>
 <body>
