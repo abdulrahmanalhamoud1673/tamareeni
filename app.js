@@ -915,8 +915,13 @@ function arErr(m) {
   return 'صار خطأ غير متوقع. جرّب مفتاحاً جديداً من aistudio.google.com/apikey';
 }
 
+// تنظيف الأحرف غير المرئية اللي بتنلصق أحياناً من لوحة مفاتيح عربية على الجوال
+// (رموز اتجاه النص U+200B..200F و U+202A..202E، رابط الكلمات U+2060، وBOM)
+// فتخلّي المفتاح يبدو صحيحاً للعين بس يفشل عند جوجل بصمت
+const cleanKey = s => s.replace(/[\s​-‏‪-‮⁠﻿]/g, '');
+
 async function saveKey() {
-  const k = $('#keyIn').value.trim().replace(/\s+/g, '');
+  const k = cleanKey($('#keyIn').value);
   const err = $('#keyErr'), btn = $('#keyBtn');
   err.innerHTML = '';
   if (!k) { err.textContent = 'الصق المفتاح أولاً.'; return; }
