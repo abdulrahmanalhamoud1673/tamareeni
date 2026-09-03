@@ -877,44 +877,33 @@ function ask() {
 function askSetup() {
   $('#app').innerHTML = `
   <header><h1>اسأل</h1><button class="link" onclick="go('home')">رجوع</button></header>
-  <p class="muted">مساعد بيجاوبك عن أي تمرين أو جهاز، وبيقدر يشوف صورة تصوّرها بالنادي. مجاني تماماً.</p>
-  <ol class="steps">
-    <li>افتح <b>aistudio.google.com/apikey</b> وسجّل دخول بحساب جوجل</li>
-    <li>من القائمة اليسرى اضغط <b>API Keys</b> — مش Projects</li>
-    <li>إذا ما عندك مفتاح، اضغط <b>Create API key</b></li>
-    <li>اضغط على المفتاح بالجدول، وبنافذة <b>API key details</b> اضغط <b>Copy key</b></li>
-  </ol>
-  <div class="note2">المفتاح بيبدأ بـ <b>AQ.</b> أو <b>AIza</b> — الاثنين مقبولين.<br>
-  انتبه بنفس النافذة: <span dir="ltr">Project name</span> و<span dir="ltr">Project number</span>
-  هدول أرقام المشروع مش المفتاح. الصح هو اللي تحت كلمة <span dir="ltr">API Key</span>.</div>
-  <input type="text" id="keyIn" class="keyin" placeholder="AIzaSy..." value="${esc(S.key || '')}">
-  <div class="keyerr" id="keyErr"></div>
-  <button class="btn" id="keyBtn" onclick="saveKey()">تفعيل</button>
-  <p class="muted sm">بدون بطاقة وبدون اشتراك. المفتاح بيتخزّن على جهازك فقط.
-  عند الضغط على تفعيل بنجرّبه فوراً ونتأكد إنه شغّال.</p>`;
+  <input type="text" id="keyIn" class="keyin" placeholder="مفتاح Gemini" value="${esc(S.key || '')}"
+         oninput="onKeyInput()" onpaste="setTimeout(onKeyInput,30)">
+  <div class="keyerr" id="keyErr"></div>`;
+  const i = $('#keyIn'); if (i) i.focus();
 }
 
 // جوجل يصدر صيغتين للمفتاح: القديمة AIza… والجديدة AQ.…
 const KEY_RE = /^(AIza[A-Za-z0-9_-]{30,}|AQ\.[A-Za-z0-9_.-]{20,})$/;
 
-// ترجمة أخطاء جوجل لرسائل مفهومة وقابلة للتنفيذ
+// ترجمة أخطاء جوجل لرسائل مفهومة
 function arErr(m) {
   m = String(m || '');
   if (/UNAUTHENTICATED|invalid authentication credentials|OAuth 2 access token|login cookie/i.test(m))
-    return 'جوجل رفض المفتاح. تأكد إنك نسخته كامل من نافذة API key details بضغطة Copy key، بدون أي حرف ناقص. وإذا ضلّت، احذفه واعمل مفتاح جديد.';
+    return 'جوجل رفض المفتاح — تأكد إنك نسخته كامل بدون نقصان.';
   if (/API key not valid|API_KEY_INVALID|API key expired/i.test(m))
-    return 'المفتاح غير صحيح أو منتهي. أنشئ مفتاحاً جديداً من aistudio.google.com/apikey';
+    return 'المفتاح غير صحيح أو منتهي.';
   if (/has not been used|SERVICE_DISABLED|PERMISSION_DENIED|blocked|suspended/i.test(m))
-    return 'هذا المفتاح ما عليه صلاحية. أنشئ مفتاحاً جديداً من aistudio.google.com/apikey مباشرة (مش من Google Cloud).';
+    return 'هذا المفتاح بدون صلاحية.';
   if (/RESOURCE_EXHAUSTED|Quota exceeded|rate limit|429/i.test(m))
-    return 'جوجل رفض الطلب بسبب حد الاستخدام. غالباً المفتاح جديد ولسه ما انفعّل — استنى دقيقتين وجرّب كمان مرة. إذا ضلّت، اعمل مفتاح جديد.';
+    return 'وصلت حد الاستخدام المجاني — جرّب بعد شوي.';
   if (/no longer available|is not found|NOT_FOUND|not supported for/i.test(m))
-    return 'مفتاحك صحيح، بس جوجل غيّرت النماذج المتاحة. التطبيق بيجرّب أكثر من نموذج تلقائياً — جرّب اضغط تفعيل كمان مرة، وإذا ضلّت أخبرني بالرسالة تحت.';
+    return 'صار تغيير بالنماذج عند جوجل — جرّب كمان مرة.';
   if (/user location|not available in your country|location is not supported/i.test(m))
     return 'الخدمة مش متاحة من موقعك حالياً.';
   if (/Failed to fetch|NetworkError|network|ERR_/i.test(m))
-    return 'ما في اتصال إنترنت. المساعد بيحتاج نت، بعكس باقي التطبيق.';
-  return 'صار خطأ غير متوقع. جرّب مفتاحاً جديداً من aistudio.google.com/apikey';
+    return 'ما في اتصال إنترنت.';
+  return 'صار خطأ غير متوقع.';
 }
 
 // تنظيف الأحرف غير المرئية اللي بتنلصق أحياناً من لوحة مفاتيح عربية على الجوال
@@ -922,33 +911,30 @@ function arErr(m) {
 // فتخلّي المفتاح يبدو صحيحاً للعين بس يفشل عند جوجل بصمت
 const cleanKey = s => s.replace(/[\s​-‏‪-‮⁠﻿]/g, '');
 
-async function saveKey() {
-  const k = cleanKey($('#keyIn').value);
-  const err = $('#keyErr'), btn = $('#keyBtn');
-  err.innerHTML = '';
-  if (!k) { err.textContent = 'الصق المفتاح أولاً.'; return; }
-  // امنع الخطأ قبل ما نرسل أصلاً، واشرح بالضبط شو لصق
-  if (!KEY_RE.test(k)) {
-    let what = `اللي لصقته يبدأ بـ «${esc(k.slice(0, 8))}…» — هذا مش شكل المفتاح.`;
-    if (/^gen-lang-client/i.test(k)) what = 'هذا <b>Project ID</b> (رقم المشروع) مش المفتاح.';
-    else if (/^projects\//i.test(k) || /^\d{6,}$/.test(k)) what = 'هذا اسم أو رقم المشروع، مش المفتاح.';
-    err.innerHTML = `${what}<br><br>
-      بصفحة <b>API Keys</b>، اضغط على مفتاحك بالجدول وبتفتح نافذة
-      <b>API key details</b>. انسخ اللي تحت كلمة <b>API Key</b> بالضبط
-      (أو اضغط زر <b>Copy key</b>).<br>
-      المفتاح بيبدأ بـ <b>AQ.</b> أو <b>AIza</b>.`;
-    return;
-  }
+// يفحّط المفتاح تلقائياً فور لصقه — بدون زر
+let keyBusy = false, keyAutoT = null;
+function onKeyInput() {
+  clearTimeout(keyAutoT);
+  const err = $('#keyErr'); if (err) err.innerHTML = '';
+  const k = cleanKey($('#keyIn') ? $('#keyIn').value : '');
+  if (!k) return;
+  keyAutoT = setTimeout(() => trySaveKey(k), 300);
+}
+async function trySaveKey(k) {
+  if (keyBusy) return;
+  const err = $('#keyErr'); if (!err) return;
+  if (!KEY_RE.test(k)) { err.textContent = 'هذا مش شكل مفتاح API.'; return; }
+  keyBusy = true; err.textContent = 'جارِ الفحص...';
   const old = S.key; S.key = k;
-  btn.disabled = true; btn.textContent = 'جارِ الفحص...';
   try {
     await gemini([{ text: 'رد بكلمة واحدة: جاهز' }], null, { max: 64, sys: 'رد بكلمة واحدة فقط.' });
-    save(); render(); msg('المساعد صار جاهز');
+    save(); msg('المساعد صار جاهز'); render();
   } catch (e) {
     S.key = old;
-    btn.disabled = false; btn.textContent = 'تفعيل';
-    err.innerHTML = esc(arErr(e.message)) + `<div class="raw">${esc(String(e.message).slice(0, 150))}</div>`;
+    const e2 = $('#keyErr');
+    if (e2) e2.innerHTML = esc(arErr(e.message)) + `<div class="raw">${esc(String(e.message).slice(0, 150))}</div>`;
   }
+  keyBusy = false;
 }
 function changeKey() { S.key = ''; save(); render(true); }
 function clearChat() { S.chat = []; save(); render(); }
