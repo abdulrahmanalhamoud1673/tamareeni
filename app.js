@@ -908,6 +908,8 @@ function arErr(m) {
     return 'هذا المفتاح ما عليه صلاحية. أنشئ مفتاحاً جديداً من aistudio.google.com/apikey مباشرة (مش من Google Cloud).';
   if (/RESOURCE_EXHAUSTED|Quota exceeded|rate limit|429/i.test(m))
     return 'جوجل رفض الطلب بسبب حد الاستخدام. غالباً المفتاح جديد ولسه ما انفعّل — استنى دقيقتين وجرّب كمان مرة. إذا ضلّت، اعمل مفتاح جديد.';
+  if (/no longer available|is not found|NOT_FOUND|not supported for/i.test(m))
+    return 'مفتاحك صحيح، بس جوجل غيّرت النماذج المتاحة. التطبيق بيجرّب أكثر من نموذج تلقائياً — جرّب اضغط تفعيل كمان مرة، وإذا ضلّت أخبرني بالرسالة تحت.';
   if (/user location|not available in your country|location is not supported/i.test(m))
     return 'الخدمة مش متاحة من موقعك حالياً.';
   if (/Failed to fetch|NetworkError|network|ERR_/i.test(m))
@@ -1057,8 +1059,11 @@ const SYS = `أنت مدرب حديد شخصي لهذا المتدرّب تحد�
 const sysPrompt = () => SYS + '\n\n' + context()
   + (askEx ? `\n\nملاحظة: سؤاله الحالي يخص تمرين «${ex(askEx).ar}» (${ex(askEx).en}).` : '');
 
-// نجرّب أكثر من نموذج: بعض المفاتيح المجانية ما عندها وصول لكلها
-const MODELS = ['gemini-2.5-flash', 'gemini-flash-latest', 'gemini-2.0-flash', 'gemini-2.5-flash-lite'];
+// نجرّب أكثر من نموذج: جوجل بتوقف نماذج قديمة عن المفاتيح الجديدة بين فترة وفترة
+// (مثال حصل فعلياً: gemini-2.5-flash-lite صار "غير متاح للمستخدمين الجدد" وطلبت gemini-3.5-flash-lite بدلها).
+// flash-latest بالأول لأنه اسم ثابت بيشاور تلقائياً على أحدث نسخة، وباقي القائمة احتياط.
+const MODELS = ['gemini-flash-latest', 'gemini-3.5-flash', 'gemini-3.5-flash-lite',
+                'gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-2.5-flash-lite'];
 
 // history = رسائل المحادثة السابقة حتى يفهم السياق ولا يبدأ من الصفر كل مرة
 async function gemini(parts, history, opts) {
@@ -1075,7 +1080,8 @@ async function gemini(parts, history, opts) {
     // نماذج 2.5 "بتفكّر" قبل ما تجاوب، والتفكير بيستهلك من حدّ الإخراج نفسه.
     // بدون تعطيله كان الرد ينقطع بنص الجملة.
     const gen = { temperature: 0.6, maxOutputTokens: opts.max || 2048 };
-    if (model.includes('2.5')) gen.thinkingConfig = { thinkingBudget: 0 };
+    // كل النماذج إلا سلسلة 2.0 بتفكّر قبل ما تجاوب، والتفكير بياكل من حدّ الرد نفسه
+    if (!model.includes('2.0')) gen.thinkingConfig = { thinkingBudget: 0 };
     try {
       const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
         method: 'POST',
