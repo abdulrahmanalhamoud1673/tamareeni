@@ -738,17 +738,6 @@ function seedInBody() {
   save();
 }
 
-function addBody() {
-  const w = +$('#mW').value;
-  if (!(w > 0)) return msg('اكتب الوزن أولاً');
-  const f = $('#mF').value ? +$('#mF').value : null;
-  const m = $('#mM').value ? +$('#mM').value : null;
-  const dt = today();
-  const entry = { date: dt, weight: w, pbf: f, smm: m, bmi: bmiOf(w) };
-  const i = S.body.findIndex(b => b.date === dt && b.source !== 'inbody');
-  if (i >= 0) S.body[i] = entry; else S.body.push(entry);
-  save(); render(); msg('✅ تم حفظ القياس');
-}
 function delBody(idx) {
   const entry = sortedBody()[idx]; if (!entry) return;
   if (!confirm(`حذف قياس ${fmt(entry.date)} (${n1(entry.weight)} كغم)؟`)) return;
@@ -782,7 +771,7 @@ function body() {
 
   <button class="btn" onclick="$('#inbodyIn').click()" ${inbodyBusy ? 'disabled' : ''}>
     ${inbodyBusy ? 'عم أقرأ البطاقة...' : 'صوّر بطاقة InBody'}</button>
-  <input type="file" id="inbodyIn" accept="image/*" capture="environment" hidden onchange="attachInBody(this)">
+  <input type="file" id="inbodyIn" accept="image/*" hidden onchange="attachInBody(this)">
   ${!S.key ? '<p class="muted sm">بدّه تفعيل المساعد مرة وحدة من صفحة «اسأل».</p>' : ''}
 
   ${latest ? `
@@ -800,15 +789,7 @@ function body() {
     <div class="rrow"><span>الوزن المستهدف</span><b>${n1(INBODY_CARD.target)} كغم</b></div>
   </div>
   ${list.length > 1 ? weightChart(list) : ''}
-  ` : '<div class="empty">أضف أول قياس تحت</div>'}
-
-  <div class="lbl">أو أدخل يدوياً (ميزان بيت مثلاً)</div>
-  <div class="mform">
-    <label>الوزن (كغم)<input type="number" inputmode="decimal" id="mW" placeholder="مثال 80"></label>
-    <label>نسبة الدهون % — اختياري<input type="number" inputmode="decimal" id="mF" placeholder="اختياري"></label>
-    <label>كتلة العضلات كغم — اختياري<input type="number" inputmode="decimal" id="mM" placeholder="اختياري"></label>
-  </div>
-  <button class="btn quiet" onclick="addBody()">حفظ القياس اليدوي</button>
+  ` : '<div class="empty">صوّر أول InBody فوق</div>'}
 
   ${list.length ? `
   <div class="lbl">القياسات السابقة</div>
@@ -1054,7 +1035,7 @@ function food() {
   ${isToday ? `
   <button class="btn" onclick="$('#mealIn').click()" ${mealBusy ? 'disabled' : ''}>
     ${mealBusy ? 'عم يحلّل الوجبة...' : 'صوّر وجبة'}</button>
-  <input type="file" id="mealIn" accept="image/*" capture="environment" hidden onchange="attachMeal(this)">
+  <input type="file" id="mealIn" accept="image/*" hidden onchange="attachMeal(this)">
   ${!S.key ? '<p class="muted sm">بدّه تفعيل المساعد مرة وحدة من صفحة «اسأل».</p>' : ''}
   ` : ''}
 
@@ -1135,7 +1116,7 @@ function ask() {
            stroke-linecap="round" stroke-linejoin="round"><path d="M20 12H5M12 5l-7 7 7 7"/></svg>
     </button>
   </div>
-  <input type="file" id="camIn" accept="image/*" capture="environment" hidden onchange="attach(this)">`;
+  <input type="file" id="camIn" accept="image/*" hidden onchange="attach(this)">`;
   const b = $('#chatBox'); if (b) b.scrollTop = b.scrollHeight;
   window.scrollTo(0, document.body.scrollHeight);
 }
