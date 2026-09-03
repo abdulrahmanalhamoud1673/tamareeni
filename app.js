@@ -899,6 +899,8 @@ function arErr(m) {
     return 'وصلت حد الاستخدام المجاني — جرّب بعد شوي.';
   if (/no longer available|is not found|NOT_FOUND|not supported for/i.test(m))
     return 'صار تغيير بالنماذج عند جوجل — جرّب كمان مرة.';
+  if (/انقطع الاتصال/i.test(m))
+    return 'الشبكة عالقة أو بطيئة جداً. جرّب تبدّل من واي فاي لبيانات الجوال أو العكس، وحاول كمان مرة.';
   if (/user location|not available in your country|location is not supported/i.test(m))
     return 'الخدمة مش متاحة من موقعك حالياً.';
   if (/Failed to fetch|NetworkError|network|ERR_/i.test(m))
@@ -1068,6 +1070,10 @@ async function gemini(parts, history, opts) {
     const gen = { temperature: 0.6, maxOutputTokens: opts.max || 2048 };
     // كل النماذج إلا سلسلة 2.0 بتفكّر قبل ما تجاوب، والتفكير بياكل من حدّ الرد نفسه
     if (!model.includes('2.0')) gen.thinkingConfig = { thinkingBudget: 0 };
+    // بدون حد زمني، اتصال عالق (شبكة بطيئة أو محجوبة جزئياً) كان يخلّي الطلب معلّق للأبد
+    // بصمت — لا نجاح ولا رسالة خطأ. بعد 12 ثانية نلغي المحاولة وننتقل للنموذج التالي.
+    const ac = new AbortController();
+    const to = setTimeout(() => ac.abort(), 12000);
     try {
       const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
         method: 'POST',
@@ -1077,14 +1083,19 @@ async function gemini(parts, history, opts) {
           systemInstruction: { parts: [{ text: opts.sys || sysPrompt() }] },
           generationConfig: gen,
         }),
+        signal: ac.signal,
       });
+      clearTimeout(to);
       const j = await r.json();
       if (j.error) { err = j.error.message; continue; }
       const c = (j.candidates || [])[0];
       const t = ((c && c.content && c.content.parts) || []).map(p => p.text).filter(Boolean).join('').trim();
       if (t) return t;
       err = c && c.finishReason === 'MAX_TOKENS' ? 'الرد انقطع لأنه طويل' : ((c && c.finishReason) || 'رد فارغ');
-    } catch (e) { err = e.message; }
+    } catch (e) {
+      clearTimeout(to);
+      err = e.name === 'AbortError' ? 'انقطع الاتصال — الشبكة بطيئة جداً أو محجوبة' : e.message;
+    }
   }
   throw new Error(err);
 }
