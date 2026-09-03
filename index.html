@@ -37,7 +37,7 @@ body{
 input,button{font-family:inherit;font-size:inherit;color:inherit}
 button{cursor:pointer}
 
-#app{max-width:560px;margin:0 auto;padding:0 20px 120px}
+#app{max-width:560px;margin:0 auto;padding:0 20px 136px}
 
 /* ---------- الترويسة ---------- */
 header{
@@ -255,6 +255,19 @@ header .sub{color:var(--mut);font-size:14px;font-variant-numeric:tabular-nums}
   transition:.2s;pointer-events:none;max-width:88vw;text-align:center}
 #msg.show{opacity:1;transform:translate(-50%,0)}
 #msg.pr{background:var(--acc);color:var(--acc-fg)}
+
+/* ---------- شريط التنقل السفلي ---------- */
+#tabbar{position:fixed;left:0;right:0;bottom:0;z-index:15;display:flex;
+  background:var(--bg);border-top:1px solid var(--line);
+  padding:7px 6px calc(7px + env(safe-area-inset-bottom))}
+#tabbar.hide{display:none}
+#tabbar button{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;
+  background:none;border:0;padding:6px 2px;color:var(--mut);border-radius:12px}
+#tabbar button:active{background:var(--soft)}
+#tabbar .ti{font-size:22px;line-height:1;opacity:.7}
+#tabbar .tl{font-size:10.5px;font-weight:600}
+#tabbar button.on{color:var(--acc)}
+#tabbar button.on .ti{opacity:1}
 </style>
 </head>
 <body>
@@ -271,6 +284,14 @@ header .sub{color:var(--mut);font-size:14px;font-variant-numeric:tabular-nums}
 </div>
 <div id="photo" onclick="if(event.target.id==='photo')closePic()"></div>
 <div id="msg"></div>
+
+<nav id="tabbar">
+  <button data-p="home" onclick="go('home')"><span class="ti">🏋️</span><span class="tl">تمرين</span></button>
+  <button data-p="food" onclick="foodDay=null;go('food')"><span class="ti">🍽️</span><span class="tl">الأكل</span></button>
+  <button data-p="body" onclick="go('body')"><span class="ti">⚖️</span><span class="tl">قياسات</span></button>
+  <button data-p="report" onclick="go('report')"><span class="ti">📈</span><span class="tl">تقرير</span></button>
+  <button data-p="ask" onclick="askEx=null;go('ask')"><span class="ti">🤖</span><span class="tl">اسأل</span></button>
+</nav>
 
 <script src="app.js"></script>
 </body>

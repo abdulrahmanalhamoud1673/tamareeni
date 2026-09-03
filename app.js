@@ -100,10 +100,21 @@ const PROGRAM = {
   ]},
 };
 
-// لون وإيموجي مميز لكل يوم تمرين — الإيموجي مرتبط بحركة اليوم:
-// صدر وترايسبس = دفع (قبضة)، ظهر = سحب (قوس)، أكتاف وبايسبس = عضلة الذراع، أرجل = رجل حرفياً
+// لون وإيموجي مميز لكل يوم تمرين — إيموجي "حيوان قوة" لكل يوم بدل رمز حرفي،
+// نفس لغة القوة اللي بيستخدمها رياضيين كمال الأجسام لوصف كل عضلة:
+// صدر = غوريلا (رمز القوة والصدر الكلاسيكي)، ظهر = نسر (الأجنحة)،
+// أكتاف = أسد (اللبدة العريضة، "ملك الجيم")، أرجل = نمر (سرعة وقوة الأرجل)
 const DAY_ACC = { d1: 'var(--d1)', d2: 'var(--d2)', d3: 'var(--d3)', d4: 'var(--d4)' };
-const DAY_EMOJI = { d1: '👊', d2: '🏹', d3: '💪', d4: '🦵' };
+const DAY_EMOJI = { d1: '🦍', d2: '🦅', d3: '🦁', d4: '🐅' };
+
+// أيقونات شريط التنقل السفلي — [الصفحة، الإيموجي، الاسم]
+const TABS = [
+  ['home', '🏋️', 'تمرين'],
+  ['food', '🍽️', 'الأكل'],
+  ['body', '⚖️', 'قياسات'],
+  ['report', '📈', 'تقرير'],
+  ['ask', '🤖', 'اسأل'],
+];
 
 // ثابتان بدل إعدادات: مدة راحة موصى فيها لبرنامج تضخيم عضلي مختلط
 // (مركّبة + معزولة) — ٩٠ ثانية الوسط الذهبي اللي بتتفق عليه أغلب المصادر.
@@ -290,10 +301,19 @@ let page = 'home';
 function render(toTop) {
   const y = window.scrollY;
   const OVERLAY = ['ask', 'report', 'body', 'food'];   // شاشات تُعرض حتى لو في تمرين شغّال
-  ({ home, workout, log, ask, report, body, food }[S.active && !OVERLAY.includes(page) ? 'workout' : page])();
+  const active = S.active && !OVERLAY.includes(page) ? 'workout' : page;
+  ({ home, workout, log, ask, report, body, food }[active])();
+  renderTabs(active);
   window.scrollTo(0, toTop ? 0 : y);
 }
 const go = p => { page = p; render(true); };
+
+// شريط التنقل السفلي — مخفي أثناء التمرين فقط (شاشة مركّزة بلا تشتيت)
+function renderTabs(active) {
+  const bar = $('#tabbar');
+  bar.classList.toggle('hide', active === 'workout');
+  bar.querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.p === active));
+}
 
 function home() {
   const done = S.sessions;
@@ -304,7 +324,6 @@ function home() {
   $('#app').innerHTML = `
   <header><h1>🏋️ تماريني</h1>
     <div class="hlinks">
-      <button class="link" onclick="askEx=null;go('ask')">🤖 اسأل</button>
       <button class="link" onclick="go('log')">📅 السجل</button>
     </div></header>
 
