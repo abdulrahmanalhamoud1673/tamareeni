@@ -601,7 +601,7 @@ function log() {
     <div class="rec">
       <div class="recrow">
         <button class="recmain" onclick="openRec=${openRec === i ? -1 : i};render()">
-          <b>${PROGRAM[s.day] ? PROGRAM[s.day].name : s.day}</b>
+          <b class="dlbl"><span class="dicon" style="color:${DAY_ACC[s.day] || 'var(--mut)'}">${DAY_ICON[s.day] || ''}</span>${PROGRAM[s.day] ? PROGRAM[s.day].name : s.day}</b>
           <time>${fmt(s.date)} · ${Math.max(1, Math.round((s.end - s.start) / 60000))} د</time>
         </button>
         ${trash(`delRec(${S.sessions.length - 1 - i})`, 'حذف التمرين')}
@@ -780,6 +780,11 @@ function body() {
   $('#app').innerHTML = `
   <header><h1>⚖️ قياساتي</h1><button class="link" onclick="go('home')">رجوع</button></header>
 
+  <button class="btn" onclick="$('#inbodyIn').click()" ${inbodyBusy ? 'disabled' : ''}>
+    ${inbodyBusy ? 'عم أقرأ البطاقة...' : 'صوّر بطاقة InBody'}</button>
+  <input type="file" id="inbodyIn" accept="image/*" capture="environment" hidden onchange="attachInBody(this)">
+  ${!S.key ? '<p class="muted sm">بدّه تفعيل المساعد مرة وحدة من صفحة «اسأل».</p>' : ''}
+
   ${latest ? `
   <div class="lbl">آخر قياس — ${fmt(latest.date)}${latest.source === 'inbody' ? ' · InBody' : ''}</div>
   <div class="rstats">
@@ -797,13 +802,13 @@ function body() {
   ${list.length > 1 ? weightChart(list) : ''}
   ` : '<div class="empty">أضف أول قياس تحت</div>'}
 
-  <div class="lbl">أضف قياساً</div>
+  <div class="lbl">أو أدخل يدوياً (ميزان بيت مثلاً)</div>
   <div class="mform">
     <label>الوزن (كغم)<input type="number" inputmode="decimal" id="mW" placeholder="مثال 80"></label>
     <label>نسبة الدهون % — اختياري<input type="number" inputmode="decimal" id="mF" placeholder="اختياري"></label>
     <label>كتلة العضلات كغم — اختياري<input type="number" inputmode="decimal" id="mM" placeholder="اختياري"></label>
   </div>
-  <button class="btn" onclick="addBody()">حفظ القياس</button>
+  <button class="btn quiet" onclick="addBody()">حفظ القياس اليدوي</button>
 
   ${list.length ? `
   <div class="lbl">القياسات السابقة</div>
@@ -886,6 +891,50 @@ function dietPrompt() {
 تمارين حديد آخر ٧ أيام: ${w.days} تمارين
 
 الهدف: تخفيف دهون مع الحفاظ على كتلة العضلات (الوزن المستهدف أقل من الحالي).`;
+}
+
+/* ===== قراءة بطاقة InBody بالصورة ===== */
+let inbodyBusy = false;
+
+const INBODY_SCHEMA = {
+  type: 'OBJECT',
+  properties: {
+    weight: { type: 'NUMBER' }, pbf: { type: 'NUMBER' }, smm: { type: 'NUMBER' },
+    bmi: { type: 'NUMBER' }, visceral: { type: 'NUMBER' }, bmr: { type: 'NUMBER' },
+    score: { type: 'NUMBER' }, whr: { type: 'NUMBER' },
+  },
+  required: ['weight'],
+};
+const INBODY_SYS = `أنت تقرأ بطاقة نتائج جهاز InBody (تحليل تكوين الجسم) من صورة. استخرج فقط القيم الظاهرة فعلياً
+بصيغة JSON: weight (الوزن كغم)، pbf (نسبة الدهون PBF %)، smm (كتلة العضلات الهيكلية SMM كغم)،
+bmi (مؤشر كتلة الجسم)، visceral (Visceral Fat Level)، bmr (الأيض الأساسي BMR سعرة)،
+score (InBody Score من ١٠٠)، whr (نسبة الخصر للورك WHR).
+weight إلزامي. أي قيمة مو واضحة بالصورة أو مو موجودة أصلاً — اتركها فارغة، لا تخترع رقماً أبداً.`;
+
+async function attachInBody(inp) {
+  const f = inp.files[0]; if (!f) return; inp.value = '';
+  if (!S.key) { msg('فعّل المساعد أول من صفحة اسأل'); return go('ask'); }
+  if (inbodyBusy) return;
+  inbodyBusy = true; render();
+  try {
+    const full = await shrink(f, 1100, 0.8);
+    const raw = await gemini(
+      [{ inline_data: { mime_type: 'image/jpeg', data: full.split(',')[1] } }, { text: 'اقرأ بطاقة الـ InBody هذه.' }],
+      null, { max: 300, sys: INBODY_SYS, json: INBODY_SCHEMA }
+    );
+    const d = JSON.parse(raw);
+    if (!(d.weight > 0)) throw new Error('ما قدرت أقرأ الوزن من الصورة بوضوح، جرّب صورة أوضح وأقرب للبطاقة');
+    const dt = today();
+    const entry = {
+      date: dt, source: 'inbody', weight: d.weight,
+      pbf: d.pbf ?? null, smm: d.smm ?? null, bmi: d.bmi ?? bmiOf(d.weight),
+      visceral: d.visceral ?? null, bmr: d.bmr ?? null, score: d.score ?? null, whr: d.whr ?? null,
+    };
+    const i = S.body.findIndex(b => b.date === dt);
+    if (i >= 0) S.body[i] = entry; else S.body.push(entry);
+    save(); inbodyBusy = false; render(); msg('⚖️ تم حفظ InBody — عم أحدّث خطتك الغذائية تلقائياً');
+    makeDiet();   // أرقام جديدة = خطة غذائية جديدة، بلا ما تضغط شي إضافي
+  } catch (e) { inbodyBusy = false; msg(arErr(e.message)); render(); }
 }
 
 /* ===== تسجيل الوجبات بالصورة ===== */
@@ -979,6 +1028,10 @@ function food() {
   const target = S.diet ? S.diet.calories : null;
   const pct = target ? Math.round(tot.calories / target * 100) : null;
   const pastDays = mealDates().filter(d => d !== dt);
+  // مقارنة بآخر يوم مسجَّل فيه أكل قبل هذا اليوم — عشان يشوف رايح فوق أو تحت
+  const prevDate = pastDays.find(d => d < dt);
+  const prevCal = prevDate ? dayTotal(prevDate).calories : null;
+  const cmp = (isToday && list.length && prevCal) ? Math.round(tot.calories - prevCal) : null;
 
   $('#app').innerHTML = `
   <header><h1>🍽️ الأكل${isToday ? ' اليوم' : ''}</h1><button class="link" onclick="go('home')">رجوع</button></header>
@@ -989,6 +1042,9 @@ function food() {
     <div class="calnum"><b>${nK(tot.calories)}</b><i>من ${nK(target)} سعرة</i></div>
   </div>` : `
   <div class="rstats" style="grid-template-columns:1fr"><div><b>${nK(tot.calories)}</b><i>سعرة</i></div></div>`}
+  ${cmp != null ? `<p class="cmpline ${cmp > 0 ? 'warn' : cmp < 0 ? 'good' : ''}">
+    ${cmp === 0 ? 'نفس آخر يوم مسجّل' : `${cmp > 0 ? '▲' : '▼'} ${nK(Math.abs(cmp))} سعرة ${cmp > 0 ? 'أكثر من' : 'أقل من'} آخر يوم مسجّل`}
+  </p>` : ''}
   <div class="rstats" style="margin-top:9px">
     <div><b>${Math.round(tot.protein)}</b><i>بروتين غ</i></div>
     <div><b>${Math.round(tot.carbs)}</b><i>كارب غ</i></div>
