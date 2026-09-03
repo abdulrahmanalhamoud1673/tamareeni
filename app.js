@@ -119,7 +119,7 @@ const INBODY_HISTORY = {
 
 /* ===== التخزين ===== */
 const KEY = 'tamareeni';
-let S = Object.assign({ sessions: [], active: null, rest: 90, notes: {}, bar: 20, body: [], diet: null },
+let S = Object.assign({ sessions: [], active: null, rest: 90, notes: {}, bar: 20, body: [], diet: null, meals: [] },
                       JSON.parse(localStorage.getItem(KEY) || '{}'));
 // الصور تُعرض أثناء الجلسة فقط ولا تُخزَّن (حتى لا تمتلئ ذاكرة المتصفح)
 const save = () => localStorage.setItem(KEY, JSON.stringify(S, (k, v) => k === '_img' ? undefined : v));
@@ -281,8 +281,8 @@ let page = 'home';
 // إعادة الرسم تحافظ على موضعك في الصفحة. مرّر true فقط عند الانتقال لشاشة أخرى.
 function render(toTop) {
   const y = window.scrollY;
-  const OVERLAY = ['ask', 'report', 'body'];   // شاشات تُعرض حتى لو في تمرين شغّال
-  ({ home, workout, log, ask, report, body }[S.active && !OVERLAY.includes(page) ? 'workout' : page])();
+  const OVERLAY = ['ask', 'report', 'body', 'food'];   // شاشات تُعرض حتى لو في تمرين شغّال
+  ({ home, workout, log, ask, report, body, food }[S.active && !OVERLAY.includes(page) ? 'workout' : page])();
   window.scrollTo(0, toTop ? 0 : y);
 }
 const go = p => { page = p; render(true); };
@@ -312,14 +312,21 @@ function home() {
   </div>
 
   <button class="rowlink" onclick="go('report')">
-    <span>تقرير الأسبوع</span>
+    <span class="rl-label"><i class="dot" style="--dc:var(--acc)"></i>تقرير الأسبوع</span>
     <i>${S.sessions.length
       ? plur(weekStats(7).days, 'تمرين واحد', 'تمرينان', 'تمارين', 'تمريناً') + ' آخر ٧ أيام'
       : 'ابدأ لتشوفه'}</i>
   </button>
 
+  <button class="rowlink" onclick="foodDay=null;go('food')">
+    <span class="rl-label"><i class="dot" style="--dc:var(--food)"></i>الأكل اليوم</span>
+    <i>${todayMeals().length
+      ? nK(dayTotal(today()).calories) + ' سعرة'
+      : 'صوّر أول وجبة'}</i>
+  </button>
+
   <button class="rowlink" onclick="go('body')">
-    <span>قياساتي</span>
+    <span class="rl-label"><i class="dot" style="--dc:var(--d2)"></i>قياساتي</span>
     <i>${S.body.length ? n1(sortedBody().slice(-1)[0].weight) + ' كغم آخر قياس' : 'InBody جاهز'}</i>
   </button>
 
@@ -589,7 +596,7 @@ function restore(inp) {
       const d = JSON.parse(r.result);
       if (!Array.isArray(d.sessions)) throw 0;
       if (!confirm('سيتم استبدال بياناتك الحالية. متابعة؟')) return;
-      S = Object.assign({ sessions: [], active: null, rest: 90, notes: {}, bar: 20, body: [], diet: null }, d);
+      S = Object.assign({ sessions: [], active: null, rest: 90, notes: {}, bar: 20, body: [], diet: null, meals: [] }, d);
       seedInBody();
       save(); render(true); msg('تم الاسترجاع');
     } catch (e) { msg('الملف غير صالح'); }
@@ -780,33 +787,50 @@ function body() {
   </div>
 
   <div class="lbl">خطة غذائية</div>
-  ${S.diet ? `<div class="aibox">${fmtAi(S.diet.text)}<div class="raw2">${esc(fmt(S.diet.date))}</div></div>` : ''}
+  ${S.diet ? `
+  <div class="rstats">
+    <div><b>${nK(S.diet.calories)}</b><i>سعرة/يوم</i></div>
+    <div><b>${S.diet.protein}</b><i>بروتين غ</i></div>
+    <div><b>${S.diet.carbs}/${S.diet.fat}</b><i>كارب/دهون غ</i></div>
+  </div>
+  <div class="aibox" style="margin-top:9px">${fmtAi(S.diet.plan)}<div class="raw2">${esc(fmt(S.diet.date))}</div></div>` : ''}
   <button class="btn ${S.diet ? 'quiet' : ''}" id="dietBtn" onclick="makeDiet()" ${dietBusy ? 'disabled' : ''}>
     ${dietBusy ? 'عم يجهّز الخطة...' : S.diet ? 'حدّث الخطة' : 'اطلب خطة غذائية'}</button>
   ${!S.key ? '<p class="muted sm">بدّه تفعيل المساعد مرة وحدة من صفحة «اسأل».</p>' : ''}
   `;
 }
 
+const DIET_SCHEMA = {
+  type: 'OBJECT',
+  properties: {
+    calories: { type: 'NUMBER' }, protein: { type: 'NUMBER' },
+    carbs: { type: 'NUMBER' }, fat: { type: 'NUMBER' },
+    plan: { type: 'STRING' },
+  },
+  required: ['calories', 'protein', 'carbs', 'fat', 'plan'],
+};
+
 async function makeDiet() {
   if (!S.key) { msg('فعّل المساعد أول من صفحة اسأل'); return go('ask'); }
   if (dietBusy) return;
   dietBusy = true; render();
   try {
-    const t = await gemini([{ text: dietPrompt() }], null, { max: 3000, sys: DIET_SYS });
-    S.diet = { date: today(), text: t };
+    const raw = await gemini([{ text: dietPrompt() }], null, { max: 2000, sys: DIET_SYS, json: DIET_SCHEMA });
+    const d = JSON.parse(raw);
+    S.diet = { date: today(), calories: Math.round(d.calories), protein: Math.round(d.protein),
+               carbs: Math.round(d.carbs), fat: Math.round(d.fat), plan: d.plan };
   } catch (e) { msg(arErr(e.message)); }
   dietBusy = false; save(); render();
 }
 
 const DIET_SYS = `أنت أخصائي تغذية عملي تساعد متدرّب حديد في الأردن. جاوب بالعربية العامية الأردنية البسيطة، مباشر وبدون مقدمات.
-
-قواعد:
-- استخدم أرقامه الحقيقية المعطاة لك فقط. لا تخترع رقماً أبداً.
-- أعطِ رقماً محدداً للسعرات اليومية، ورقماً لكل عنصر (بروتين/كارب/دهون بالغرام).
-- اقترح توزيع وجبات بسيط (فطور، غدا، عشا، سناك) بأكل عادي متوفر بالأردن: دجاج، لحمة، أرز، خبز، بيض، لبنة، جبنة، خضار، فواكه، شوفان. بدون مكملات أو أطعمة غريبة.
-- خلّيه عملياً وقابلاً للتكرار يومياً، مش قائمة أطعمة معقدة أو صارمة.
-- أكمل الرد حتى النهاية، لا تقطعه أبداً. لا تتجاوز ٢٢٠ كلمة.
-- أنهِ دائماً بجملة إنك لست طبيباً ولا أخصائي تغذية مرخّص، وهذا إرشاد عام، وإذا في حالة صحية يراجع مختص.`;
+رجّع النتيجة بصيغة JSON فقط بالحقول المطلوبة:
+- calories/protein/carbs/fat: أرقام فقط (سعرة وغرام)، مبنية على أرقامه الحقيقية المعطاة لك. لا تخترع رقماً أبداً.
+- plan: نص خطة الوجبات، بهذا الترتيب بالضبط:
+  "يومك:" فطور - غدا - عشا - سناك، كل وحدة بجملة قصيرة بأكل عادي متوفر بالأردن (دجاج، لحمة، أرز، خبز، بيض، لبنة، جبنة، خضار، فواكه، شوفان)، بدون مكملات أو أطعمة غريبة.
+  ثم "نصيحة:" جملة عملية واحدة.
+  ثم جملة إنك لست طبيباً ولا أخصائي تغذية مرخّص، وهذا إرشاد عام، وإذا في حالة صحية يراجع مختص.
+  خلّيه عملياً وقابلاً للتكرار يومياً، لا تتجاوز ٢٢٠ كلمة، ولا تقطع الجملة أبداً.`;
 
 function dietPrompt() {
   const list = sortedBody();
@@ -823,14 +847,152 @@ function dietPrompt() {
 نسبة الخصر للورك: ${INBODY_CARD.whr} (الطبيعي ٠.٨٠–٠.٩٠، عنده أعلى قليلاً)
 تمارين حديد آخر ٧ أيام: ${w.days} تمارين
 
-الهدف: تخفيف دهون مع الحفاظ على كتلة العضلات (الوزن المستهدف أقل من الحالي).
+الهدف: تخفيف دهون مع الحفاظ على كتلة العضلات (الوزن المستهدف أقل من الحالي).`;
+}
 
-اكتب خطة غذائية بهذا الترتيب بالضبط:
-"السعرات اليومية:" رقم واحد بالسعرة.
-"البروتين/الكارب/الدهون:" ثلاث أرقام بالغرام.
-"يومك:" فطور - غدا - عشا - سناك، كل وحدة بجملة قصيرة بأكل حقيقي.
-"نصيحة:" جملة عملية واحدة.
-ثم جملة الإخلاء الطبي المطلوبة.`;
+/* ===== تسجيل الوجبات بالصورة ===== */
+let mealBusy = false, mealPendingImg = null, foodDay = null;   // foodDay = null يعني اليوم
+
+const sortedMeals = date => (S.meals || []).filter(m => m.date === date).sort((a, b) => a.time - b.time);
+const todayMeals = () => sortedMeals(today());
+const mealDates = () => [...new Set((S.meals || []).map(m => m.date))].sort().reverse();
+function dayTotal(date) {
+  return sortedMeals(date).reduce((a, m) => ({
+    calories: a.calories + (m.calories || 0), protein: a.protein + (m.protein || 0),
+    carbs: a.carbs + (m.carbs || 0), fat: a.fat + (m.fat || 0),
+  }), { calories: 0, protein: 0, carbs: 0, fat: 0 });
+}
+
+// نصغّر الصورة مرتين: نسخة أكبر للتحليل عند جوجل، ونسخة صغيرة جداً تبقى محفوظة بجهازك
+function shrinkDataUrl(dataUrl, max, q) {
+  return new Promise(res => {
+    const im = new Image();
+    im.onload = () => {
+      const s = Math.min(1, max / Math.max(im.width, im.height));
+      const cv = document.createElement('canvas');
+      cv.width = Math.round(im.width * s); cv.height = Math.round(im.height * s);
+      cv.getContext('2d').drawImage(im, 0, 0, cv.width, cv.height);
+      res(cv.toDataURL('image/jpeg', q));
+    };
+    im.src = dataUrl;
+  });
+}
+
+const MEAL_SCHEMA = {
+  type: 'OBJECT',
+  properties: {
+    label: { type: 'STRING' }, calories: { type: 'NUMBER' },
+    protein: { type: 'NUMBER' }, carbs: { type: 'NUMBER' }, fat: { type: 'NUMBER' },
+  },
+  required: ['label', 'calories', 'protein', 'carbs', 'fat'],
+};
+const MEAL_SYS = `أنت خبير تغذية تحلّل صور الأكل وتقدّر سعراتها اعتماداً على حجم الحصة وطريقة التحضير الظاهرة بالصورة قدر الإمكان.
+رجّع بصيغة JSON فقط: label (اسم الوجبة بجملة عربية قصيرة، مثل "صدر دجاج مشوي مع أرز وسلطة")، calories (رقم السعرات التقديرية)، protein/carbs/fat (أرقام بالغرام).
+هذا تقدير تقريبي بصري مش تحليل مخبري دقيق. لا تضف أي نص خارج الحقول المطلوبة.`;
+
+async function attachMeal(inp) {
+  const f = inp.files[0]; if (!f) return; inp.value = '';
+  if (!S.key) { msg('فعّل المساعد أول من صفحة اسأل'); return go('ask'); }
+  if (mealBusy) return;
+  mealBusy = true; render();
+  try {
+    const full = await shrink(f, 800, 0.72);            // للتحليل عند جوجل، ما تُخزَّن
+    mealPendingImg = await shrinkDataUrl(full, 220, 0.55); // نسخة صغيرة تُحفظ بالسجل
+    render();
+    const raw = await gemini(
+      [{ inline_data: { mime_type: 'image/jpeg', data: full.split(',')[1] } }, { text: 'حلّل هذه الوجبة.' }],
+      null, { max: 400, sys: MEAL_SYS, json: MEAL_SCHEMA }
+    );
+    const d = JSON.parse(raw);
+    S.meals = S.meals || [];
+    S.meals.push({
+      date: today(), time: Date.now(), img: mealPendingImg, label: d.label,
+      calories: Math.round(d.calories), protein: Math.round(d.protein),
+      carbs: Math.round(d.carbs), fat: Math.round(d.fat),
+    });
+    foodDay = null; save(); msg('تمت إضافة الوجبة');
+  } catch (e) { msg(arErr(e.message)); }
+  mealBusy = false; mealPendingImg = null; render();
+}
+function delMeal(date, idx) {
+  const list = sortedMeals(date); const m = list[idx]; if (!m) return;
+  if (!confirm(`حذف «${m.label}»؟`)) return;
+  const real = S.meals.indexOf(m);
+  if (real >= 0) S.meals.splice(real, 1);
+  save(); render();
+}
+
+function ringSVG(pct) {
+  const r = 42, c = Math.round(2 * Math.PI * r);
+  const off = Math.round(c * (1 - Math.min(1, pct / 100)));
+  const color = pct > 100 ? 'var(--warn)' : 'var(--food)';
+  return `<svg viewBox="0 0 100 100" class="calring">
+    <circle cx="50" cy="50" r="${r}" fill="none" stroke="var(--line)" stroke-width="9"/>
+    <circle cx="50" cy="50" r="${r}" fill="none" stroke="${color}" stroke-width="9" stroke-linecap="round"
+      stroke-dasharray="${c}" stroke-dashoffset="${off}" transform="rotate(-90 50 50)"/>
+  </svg>`;
+}
+
+function food() {
+  const dt = foodDay || today();
+  const isToday = dt === today();
+  const list = sortedMeals(dt);
+  const tot = dayTotal(dt);
+  const target = S.diet ? S.diet.calories : null;
+  const pct = target ? Math.round(tot.calories / target * 100) : null;
+  const pastDays = mealDates().filter(d => d !== dt);
+
+  $('#app').innerHTML = `
+  <header><h1>الأكل${isToday ? ' اليوم' : ''}</h1><button class="link" onclick="go('home')">رجوع</button></header>
+
+  ${!isToday ? `<div class="lbl">${fmt(dt)}</div>` : ''}
+  ${target ? `
+  <div class="calring-wrap">${ringSVG(pct)}
+    <div class="calnum"><b>${nK(tot.calories)}</b><i>من ${nK(target)} سعرة</i></div>
+  </div>` : `
+  <div class="rstats" style="grid-template-columns:1fr"><div><b>${nK(tot.calories)}</b><i>سعرة</i></div></div>`}
+  <div class="rstats" style="margin-top:9px">
+    <div><b>${Math.round(tot.protein)}</b><i>بروتين غ</i></div>
+    <div><b>${Math.round(tot.carbs)}</b><i>كارب غ</i></div>
+    <div><b>${Math.round(tot.fat)}</b><i>دهون غ</i></div>
+  </div>
+
+  ${isToday ? `
+  <button class="btn" onclick="$('#mealIn').click()" ${mealBusy ? 'disabled' : ''}>
+    ${mealBusy ? 'عم يحلّل الوجبة...' : 'صوّر وجبة'}</button>
+  <input type="file" id="mealIn" accept="image/*" capture="environment" hidden onchange="attachMeal(this)">
+  ${!S.key ? '<p class="muted sm">بدّه تفعيل المساعد مرة وحدة من صفحة «اسأل».</p>' : ''}
+  ` : ''}
+
+  ${mealBusy && mealPendingImg ? `
+  <div class="meallist" style="margin-top:14px">
+    <div class="mealcard pend"><img src="${mealPendingImg}" alt=""><div class="mealinfo"><b>عم يحلّل الصورة...</b></div></div>
+  </div>` : ''}
+
+  ${list.length ? `<div class="lbl">وجبات ${isToday ? 'اليوم' : 'هذا اليوم'}</div>
+  <div class="meallist">
+    ${list.slice().reverse().map((m, i) => `
+      <div class="mealcard">
+        <img src="${m.img}" alt="">
+        <div class="mealinfo">
+          <b>${esc(m.label)}</b>
+          <span>${nK(m.calories)} سعرة · ${m.protein}غ بروتين · ${m.carbs}غ كارب · ${m.fat}غ دهون</span>
+          <time>${new Date(m.time).toLocaleTimeString('ar', { hour: '2-digit', minute: '2-digit' })}</time>
+        </div>
+        ${trash(`delMeal('${dt}',${list.length - 1 - i})`, 'حذف الوجبة')}
+      </div>`).join('')}
+  </div>` : (mealBusy ? '' : `<div class="empty">${isToday ? 'صوّر أول وجبة تحت' : 'ما في وجبات هذا اليوم'}</div>`)}
+
+  ${pastDays.length ? `
+  <div class="lbl">أيام سابقة</div>
+  <div class="rlist">
+    ${pastDays.slice(0, 14).map(d => `
+      <div class="rrow daypick" onclick="foodDay='${d}';render(true)">
+        <span>${fmt(d)}</span><b>${nK(dayTotal(d).calories)} سعرة</b>
+      </div>`).join('')}
+  </div>` : ''}
+  ${!isToday ? `<button class="btn quiet" onclick="foodDay=null;render(true)">رجوع لليوم</button>` : ''}
+  `;
 }
 
 /* ===== المساعد الذكي (Gemini المجاني) ===== */
@@ -1080,6 +1242,8 @@ async function gemini(parts, history, opts) {
     const gen = { temperature: 0.6, maxOutputTokens: opts.max || 2048 };
     // كل النماذج إلا سلسلة 2.0 بتفكّر قبل ما تجاوب، والتفكير بياكل من حدّ الرد نفسه
     if (!model.includes('2.0')) gen.thinkingConfig = { thinkingBudget: 0 };
+    // مخرجات JSON منظّمة (خطة الغذاء وتحليل الوجبات) — بيضمن أرقاماً قابلة للجمع بدل نص حر
+    if (opts.json) { gen.responseMimeType = 'application/json'; gen.responseSchema = opts.json; }
     // بدون حد زمني، اتصال عالق (شبكة بطيئة أو محجوبة جزئياً) كان يخلّي الطلب معلّق للأبد
     // بصمت — لا نجاح ولا رسالة خطأ. بعد 12 ثانية نلغي المحاولة وننتقل للنموذج التالي.
     const ac = new AbortController();
