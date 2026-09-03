@@ -100,9 +100,16 @@ const PROGRAM = {
   ]},
 };
 
-// لون وإيموجي مميز لكل يوم تمرين
+// لون وإيموجي مميز لكل يوم تمرين — الإيموجي مرتبط بحركة اليوم:
+// صدر وترايسبس = دفع (قبضة)، ظهر = سحب (قوس)، أكتاف وبايسبس = عضلة الذراع، أرجل = رجل حرفياً
 const DAY_ACC = { d1: 'var(--d1)', d2: 'var(--d2)', d3: 'var(--d3)', d4: 'var(--d4)' };
-const DAY_EMOJI = { d1: '🔥', d2: '🦅', d3: '💪', d4: '🦵' };
+const DAY_EMOJI = { d1: '👊', d2: '🏹', d3: '💪', d4: '🦵' };
+
+// ثابتان بدل إعدادات: مدة راحة موصى فيها لبرنامج تضخيم عضلي مختلط
+// (مركّبة + معزولة) — ٩٠ ثانية الوسط الذهبي اللي بتتفق عليه أغلب المصادر.
+// ووزن البار الأولمبي القياسي بأغلب الصالات.
+const REST_SEC = 90;
+const BAR_KG = 20;
 
 /* ===== بيانات آخر بطاقة InBody (٣٠ أغسطس ٢٠٢٦) ===== */
 const HEIGHT_CM = 178.5;
@@ -120,7 +127,7 @@ const INBODY_HISTORY = {
 
 /* ===== التخزين ===== */
 const KEY = 'tamareeni';
-let S = Object.assign({ sessions: [], active: null, rest: 90, notes: {}, bar: 20, body: [], diet: null, meals: [] },
+let S = Object.assign({ sessions: [], active: null, notes: {}, body: [], diet: null, meals: [] },
                       JSON.parse(localStorage.getItem(KEY) || '{}'));
 // الصور تُعرض أثناء الجلسة فقط ولا تُخزَّن (حتى لا تمتلئ ذاكرة المتصفح)
 const save = () => localStorage.setItem(KEY, JSON.stringify(S, (k, v) => k === '_img' ? undefined : v));
@@ -175,7 +182,7 @@ const nK = v => Math.round(v).toLocaleString('en-US');  // فواصل الآلا
 // صيغة الجمع بالعربي: ١ / ٢ / ٣-١٠ / ١١+
 const plur = (n, one, two, few, many) => n === 1 ? one : n === 2 ? two : `${n} ${n <= 10 ? few : many}`;
 function plateSplit(total, bar) {
-  bar = bar || S.bar || 20;
+  bar = bar || BAR_KG;
   if (!(total > 0)) return { err: 'اكتب الوزن الكلي' };
   if (total < bar) return { err: `أقل من وزن البار نفسه (${nP(bar)} كغم)` };
   if (total === bar) return { bar, side: [], left: 0 };
@@ -331,14 +338,7 @@ function home() {
     <i>${S.body.length ? n1(sortedBody().slice(-1)[0].weight) + ' كغم آخر قياس' : 'InBody جاهز'}</i>
   </button>
 
-  <div class="setting">
-    <span>مدة الراحة</span>
-    <input type="number" inputmode="numeric" value="${S.rest}" onchange="S.rest=Math.max(10,+this.value||90);save()">
-  </div>
-  <div class="setting">
-    <span>وزن البار الفاضي</span>
-    <input type="number" inputmode="decimal" step="0.5" value="${S.bar}" onchange="S.bar=Math.max(0,+this.value||20);save()">
-  </div>`;
+  `;
 }
 
 function start(k) {
@@ -470,7 +470,7 @@ function tick(i, j) {
     // داخل السوبرست: انتقل للتمرين التالي مباشرة بلا راحة
     const nx = S.active.entries[i + 1];
     const inSS = it.ss != null && nx && nx.ss === it.ss && nx.sets.some(x => !x.done);
-    if (!inSS && S.active.entries.some(e => e.sets.some(x => !x.done))) rest(S.rest);
+    if (!inSS && S.active.entries.some(e => e.sets.some(x => !x.done))) rest(REST_SEC);
   }
   save(); render();
 }
@@ -597,7 +597,7 @@ function restore(inp) {
       const d = JSON.parse(r.result);
       if (!Array.isArray(d.sessions)) throw 0;
       if (!confirm('سيتم استبدال بياناتك الحالية. متابعة؟')) return;
-      S = Object.assign({ sessions: [], active: null, rest: 90, notes: {}, bar: 20, body: [], diet: null, meals: [] }, d);
+      S = Object.assign({ sessions: [], active: null, notes: {}, body: [], diet: null, meals: [] }, d);
       seedInBody();
       save(); render(true); msg('✅ تم الاسترجاع');
     } catch (e) { msg('الملف غير صالح'); }
@@ -610,7 +610,8 @@ let repBusy = false;
 function report() {
   const w = weekStats(7), prev = weekStats(14);
   const ch = changes(7), pr = allProjections();
-  const prevKg = prev.kg - w.kg, prevDays = prev.days - w.days;
+  const lastWeekDays = prev.days - w.days;         // عدد تمارين الأسبوع اللي قبله
+  const daysDelta = w.days - lastWeekDays;          // الفرق: هالأسبوع مقابل اللي قبله
   const rep = S.report;
 
   $('#app').innerHTML = `
@@ -618,10 +619,9 @@ function report() {
 
   ${!S.sessions.length ? '<div class="empty">سجّل أول تمرين وبيبلّش التقرير يشتغل</div>' : `
   <div class="lbl">آخر ٧ أيام</div>
-  <div class="rstats">
-    <div><b>${w.days}</b><i>${w.days === 1 ? 'تمرين' : w.days <= 10 ? 'تمارين' : 'تمريناً'}</i>${prevDays ? `<u class="${w.days - prevDays > 0 ? 'pos' : ''}">${w.days - prevDays >= 0 ? '+' : ''}${w.days - prevDays}</u>` : ''}</div>
+  <div class="rstats" style="grid-template-columns:repeat(2,1fr)">
+    <div><b>${w.days}</b><i>${w.days === 1 ? 'تمرين' : w.days <= 10 ? 'تمارين' : 'تمريناً'}</i>${daysDelta ? `<u class="${daysDelta > 0 ? 'pos' : ''}">${daysDelta > 0 ? '+' : ''}${daysDelta} عن الأسبوع اللي قبله</u>` : ''}</div>
     <div><b>${w.sets}</b><i>${w.sets === 1 ? 'مجموعة' : w.sets <= 10 ? 'مجموعات' : 'مجموعة'}</i></div>
-    <div><b>${nK(w.kg)}</b><i>كغم مرفوع</i>${prevKg ? `<u class="${w.kg - prevKg > 0 ? 'pos' : ''}">${w.kg - prevKg >= 0 ? '+' : ''}${nK(w.kg - prevKg)}</u>` : ''}</div>
   </div>
 
   ${ch.up.length ? `<div class="lbl">⬆️ تطوّرت</div>
@@ -1190,7 +1190,6 @@ function context() {
 
   const w = weekStats(7);
   return `تاريخ اليوم: ${today()}
-وزن البار الفاضي عنده: ${S.bar} كغم. مدة راحته بين المجموعات: ${S.rest} ثانية.
 آخر ٧ أيام: ${w.days} تمارين، ${w.sets} مجموعة، ${Math.round(w.kg)} كغم إجمالي.
 
 === برنامجه (٤ أيام) بأوزانه الحالية ===
