@@ -1,4 +1,4 @@
-const CACHE = 'tamareeni-v36';
+const CACHE = 'tamareeni-v37';
 const ASSETS = ['./', './index.html', './app.js', './manifest.json', './icon-192.png', './icon-512.png'];
 
 // صور التمارين — تُخزّن مسبقاً حتى تظهر بدون إنترنت

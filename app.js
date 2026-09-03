@@ -132,6 +132,20 @@ const TABS = [
 const REST_SEC = 90;
 const BAR_KG = 20;
 
+// تعافي العضلات: نافذة تقريبية بالساعات لكل يوم حتى يرجع جاهز — عضلات أصغر
+// (أكتاف/باي) بتتعافى أسرع من الكبيرة (ظهر/أرجل)، حسب إرشادات علم التمرين
+// العامة لبرامج التضخيم. مبني على وقت انتهاء آخر تمرين فعلي (s.end)، مو تخمين.
+const RECOVERY_H = { d1: 60, d2: 72, d3: 48, d4: 84 };
+function recoveryInfo(day) {
+  const done = S.sessions.filter(s => s.day === day);
+  if (!done.length) return null;
+  const last = done[done.length - 1];
+  const hSince = (Date.now() - last.end) / 36e5;
+  const need = RECOVERY_H[day] || 72;
+  const pct = Math.min(100, Math.round(hSince / need * 100));
+  return { pct, ready: pct >= 100, remainH: Math.max(0, Math.ceil(need - hSince)), lastDate: last.date };
+}
+
 /* ===== بيانات آخر بطاقة InBody (٣٠ أغسطس ٢٠٢٦) ===== */
 const HEIGHT_CM = 178.5;
 const INBODY_CARD = {
@@ -349,9 +363,13 @@ function home() {
   <div class="daylist">
     ${keys.map(k => {
       const l = done.filter(s => s.day === k).pop();
+      const r = l && recoveryInfo(k);
+      const rTxt = !r ? '' : r.ready ? ' · جاهز'
+        : ` · يحتاج ${r.remainH < 24 ? r.remainH + ' سا' : plur(Math.round(r.remainH / 24), 'يوم', 'يومين', 'أيام', 'يوماً')}`;
+      const rColor = !r ? '' : r.ready ? 'var(--good)' : 'var(--warn)';
       return `<button class="day" style="--dc:${DAY_ACC[k]}" onclick="start('${k}')">
         <b class="dlbl"><span class="dicon" style="color:${DAY_ACC[k]}">${DAY_ICON[k]}</span>${PROGRAM[k].name}</b>
-        <span>${l ? ago(l.date) : k === next ? 'ابدأ من هنا' : '—'}</span>
+        <span>${l ? ago(l.date) : k === next ? 'ابدأ من هنا' : '—'}${rTxt ? `<b style="color:${rColor};font-weight:600">${rTxt}</b>` : ''}</span>
       </button>`;
     }).join('')}
   </div>
@@ -703,6 +721,12 @@ function reportPrompt() {
     `${s.date} (${PROGRAM[s.day] ? PROGRAM[s.day].name : s.day}): ` +
     s.entries.map(e => `${ex(e.ex).ar} ${e.sets.map(x => x.w + '×' + x.r).join(',')}`).join(' | ')).join('\n');
   const notes = Object.entries(S.notes || {}).map(([k, v]) => `${ex(k).ar}: ${v}`).join(' | ');
+  const rec = Object.keys(PROGRAM).map(k => {
+    const r = recoveryInfo(k);
+    const s = !r ? 'ما جرّبه بعد' : r.ready ? 'جاهز تماماً الآن'
+      : `لسا بحاجة ${r.remainH < 24 ? r.remainH + ' ساعة' : plur(Math.round(r.remainH / 24), 'يوم', 'يومين', 'أيام', 'يوماً')} تعافي`;
+    return `${PROGRAM[k].name}: ${s}`;
+  }).join(' | ');
   return `اكتب تقريراً أسبوعياً قصيراً لهذا المتدرّب بالعربية العامية الأردنية.
 
 أرقام آخر ٧ أيام: ${w.days} تمارين، ${w.sets} مجموعة، ${Math.round(w.kg)} كغم إجمالي.
@@ -710,6 +734,7 @@ function reportPrompt() {
 تطوّر فيها: ${ch.up.map(c => `${ex(c.id).ar} ${c.from}→${c.to}`).join('، ') || 'لا شيء'}
 واقفة مكانها: ${ch.flat.map(c => `${ex(c.id).ar} عند ${c.at}`).join('، ') || 'لا شيء'}
 ملاحظاته على الأجهزة: ${notes || 'لا يوجد'}
+حالة تعافي كل يوم الآن (محسوبة من وقت آخر تمرين فعلي، مو تخمين): ${rec}
 
 تفاصيل آخر التمارين:
 ${last || 'لا يوجد'}
@@ -718,7 +743,8 @@ ${last || 'لا يوجد'}
 سطر أول: تقييم الأسبوع بجملة واحدة صريحة.
 ثم "أحسن شي:" وسطر واحد.
 ثم "لازم تنتبه:" وسطر أو سطرين على التمارين الواقفة مكانها أو الحجم الناقص.
-ثم "الأسبوع الجاي:" وسطرين إجراءات محددة بأرقام (مثلاً: زِد السكوات لـ ٢٥ كغم، أو أضف مجموعة رابعة لتمرين كذا).
+ثم "الأسبوع الجاي:" وسطرين إجراءات محددة بأرقام (مثلاً: زِد السكوات لـ ٢٥ كغم، أو أضف مجموعة رابعة لتمرين كذا) —
+خذ حالة التعافي بعين الاعتبار إذا فيها شيء مفيد (مثلاً يوم لسا متعب فعلاً، اقترح يبلّش بيوم ثاني جاهز أكتر).
 لا تتجاوز ١٤٠ كلمة إجمالاً.`;
 }
 
