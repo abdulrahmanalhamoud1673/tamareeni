@@ -100,8 +100,9 @@ const PROGRAM = {
   ]},
 };
 
-// لون مميز لكل يوم تمرين (يُقرأ من متغيّرات CSS بالجذر)
+// لون وإيموجي مميز لكل يوم تمرين
 const DAY_ACC = { d1: 'var(--d1)', d2: 'var(--d2)', d3: 'var(--d3)', d4: 'var(--d4)' };
+const DAY_EMOJI = { d1: '🔥', d2: '🦅', d3: '💪', d4: '🦵' };
 
 /* ===== بيانات آخر بطاقة InBody (٣٠ أغسطس ٢٠٢٦) ===== */
 const HEIGHT_CM = 178.5;
@@ -294,10 +295,10 @@ function home() {
   const next = lastDay ? keys[(keys.indexOf(lastDay) + 1) % keys.length] : keys[0];
 
   $('#app').innerHTML = `
-  <header><h1>تماريني</h1>
+  <header><h1>🏋️ تماريني</h1>
     <div class="hlinks">
-      <button class="link" onclick="askEx=null;go('ask')">اسأل</button>
-      <button class="link" onclick="go('log')">السجل</button>
+      <button class="link" onclick="askEx=null;go('ask')">🤖 اسأل</button>
+      <button class="link" onclick="go('log')">📅 السجل</button>
     </div></header>
 
   <div class="lbl">اختر تمرين اليوم</div>
@@ -305,28 +306,28 @@ function home() {
     ${keys.map(k => {
       const l = done.filter(s => s.day === k).pop();
       return `<button class="day" style="--dc:${DAY_ACC[k]}" onclick="start('${k}')">
-        <b>${PROGRAM[k].name}</b>
+        <b>${DAY_EMOJI[k]} ${PROGRAM[k].name}</b>
         <span>${l ? ago(l.date) : k === next ? 'ابدأ من هنا' : '—'}</span>
       </button>`;
     }).join('')}
   </div>
 
   <button class="rowlink" onclick="go('report')">
-    <span class="rl-label"><i class="dot" style="--dc:var(--acc)"></i>تقرير الأسبوع</span>
+    <span class="rl-label">📈 تقرير الأسبوع</span>
     <i>${S.sessions.length
       ? plur(weekStats(7).days, 'تمرين واحد', 'تمرينان', 'تمارين', 'تمريناً') + ' آخر ٧ أيام'
       : 'ابدأ لتشوفه'}</i>
   </button>
 
   <button class="rowlink" onclick="foodDay=null;go('food')">
-    <span class="rl-label"><i class="dot" style="--dc:var(--food)"></i>الأكل اليوم</span>
+    <span class="rl-label">🍽️ الأكل اليوم</span>
     <i>${todayMeals().length
       ? nK(dayTotal(today()).calories) + ' سعرة'
       : 'صوّر أول وجبة'}</i>
   </button>
 
   <button class="rowlink" onclick="go('body')">
-    <span class="rl-label"><i class="dot" style="--dc:var(--d2)"></i>قياساتي</span>
+    <span class="rl-label">⚖️ قياساتي</span>
     <i>${S.body.length ? n1(sortedBody().slice(-1)[0].weight) + ' كغم آخر قياس' : 'InBody جاهز'}</i>
   </button>
 
@@ -359,7 +360,7 @@ function workout() {
   const a = S.active;
   $('#app').innerHTML = `
   <header>
-    <div><h1 style="color:${DAY_ACC[a.day] || 'var(--tx)'}">${PROGRAM[a.day].name}</h1><div class="sub" id="clock">0:00</div></div>
+    <div><h1 style="color:${DAY_ACC[a.day] || 'var(--tx)'}">${DAY_EMOJI[a.day] || ''} ${PROGRAM[a.day].name}</h1><div class="sub" id="clock">0:00</div></div>
     <button class="link" onclick="finish()">إنهاء</button>
   </header>
 
@@ -464,7 +465,7 @@ function tick(i, j) {
     const e = ex(it.ex);
     if (!e.bw && !e.sec && s.w > 0) {
       const h = exHistory(it.ex);
-      if (h.length && s.w > Math.max(...h.map(x => x.max))) msg('رقم قياسي جديد', 'pr');
+      if (h.length && s.w > Math.max(...h.map(x => x.max))) msg('🏆 رقم قياسي جديد', 'pr');
     }
     // داخل السوبرست: انتقل للتمرين التالي مباشرة بلا راحة
     const nx = S.active.entries[i + 1];
@@ -527,7 +528,7 @@ function finish() {
   if (!entries.length) return msg('ما سجّلت أي مجموعة بعد');
   S.sessions.push({ day: a.day, date: a.date, start: a.start, end: Date.now(), entries });
   S.active = null; save(); restSkip(); page = 'home'; render(true);
-  msg('تم حفظ التمرين');
+  msg('💪 تم حفظ التمرين');
 }
 function cancel() {
   if (!confirm('إلغاء التمرين بدون حفظ؟')) return;
@@ -558,7 +559,7 @@ function delEntry(idx, k) {
 function log() {
   const list = S.sessions.slice().reverse();
   $('#app').innerHTML = `
-  <header><h1>السجل</h1><button class="link" onclick="go('home')">رجوع</button></header>
+  <header><h1>📅 السجل</h1><button class="link" onclick="go('home')">رجوع</button></header>
   ${list.length ? list.map((s, i) => `
     <div class="rec">
       <div class="recrow">
@@ -598,7 +599,7 @@ function restore(inp) {
       if (!confirm('سيتم استبدال بياناتك الحالية. متابعة؟')) return;
       S = Object.assign({ sessions: [], active: null, rest: 90, notes: {}, bar: 20, body: [], diet: null, meals: [] }, d);
       seedInBody();
-      save(); render(true); msg('تم الاسترجاع');
+      save(); render(true); msg('✅ تم الاسترجاع');
     } catch (e) { msg('الملف غير صالح'); }
   };
   r.readAsText(f);
@@ -613,7 +614,7 @@ function report() {
   const rep = S.report;
 
   $('#app').innerHTML = `
-  <header><h1>تقرير الأسبوع</h1><button class="link" onclick="go('home')">رجوع</button></header>
+  <header><h1>📈 تقرير الأسبوع</h1><button class="link" onclick="go('home')">رجوع</button></header>
 
   ${!S.sessions.length ? '<div class="empty">سجّل أول تمرين وبيبلّش التقرير يشتغل</div>' : `
   <div class="lbl">آخر ٧ أيام</div>
@@ -623,15 +624,15 @@ function report() {
     <div><b>${nK(w.kg)}</b><i>كغم مرفوع</i>${prevKg ? `<u class="${w.kg - prevKg > 0 ? 'pos' : ''}">${w.kg - prevKg >= 0 ? '+' : ''}${nK(w.kg - prevKg)}</u>` : ''}</div>
   </div>
 
-  ${ch.up.length ? `<div class="lbl">تطوّرت</div>
+  ${ch.up.length ? `<div class="lbl">⬆️ تطوّرت</div>
   <div class="rlist">${ch.up.map(c => `<div class="rrow"><span>${esc(ex(c.id).ar)}</span>
     <b class="good">${n1(c.from)} ← ${n1(c.to)}${c.reps ? ' عدة' : ''}</b></div>`).join('')}</div>` : ''}
 
-  ${ch.flat.length ? `<div class="lbl">واقف مكانه</div>
+  ${ch.flat.length ? `<div class="lbl">⏸️ واقف مكانه</div>
   <div class="rlist">${ch.flat.map(c => `<div class="rrow"><span>${esc(ex(c.id).ar)}</span>
     <b class="warn">${n1(c.at)} كغم</b></div>`).join('')}</div>` : ''}
 
-  ${pr.length ? `<div class="lbl">بهالمعدل، رح توصل</div>
+  ${pr.length ? `<div class="lbl">🎯 بهالمعدل، رح توصل</div>
   <div class="rlist">${pr.map(x => `<div class="rrow proj">
     <span>${esc(ex(x.id).ar)}</span>
     <b class="acc">${n1(x.p.goal)} كغم</b>
@@ -640,7 +641,7 @@ function report() {
   <p class="muted sm">التوقّع مبني على سرعة تطوّرك الفعلية. كل ما داومت، كل ما قرب.</p>`
   : '<p class="muted sm">التوقّعات بتظهر بعد ٣ تمارين على الأقل لنفس التمرين.</p>'}
 
-  <div class="lbl">تحليل المدرب</div>
+  <div class="lbl">🧠 تحليل المدرب</div>
   ${rep ? `<div class="aibox">${fmtAi(rep.text)}<div class="raw2">${esc(fmt(rep.date))}</div></div>` : ''}
   <button class="btn ${rep ? 'quiet' : ''}" id="repBtn" onclick="makeReport()" ${repBusy ? 'disabled' : ''}>
     ${repBusy ? 'المدرب عم يقرأ أرقامك...' : rep ? 'حدّث التحليل' : 'اطلب تحليل المدرب'}</button>
@@ -709,7 +710,7 @@ function addBody() {
   const entry = { date: dt, weight: w, pbf: f, smm: m, bmi: bmiOf(w) };
   const i = S.body.findIndex(b => b.date === dt && b.source !== 'inbody');
   if (i >= 0) S.body[i] = entry; else S.body.push(entry);
-  save(); render(); msg('تم حفظ القياس');
+  save(); render(); msg('✅ تم حفظ القياس');
 }
 function delBody(idx) {
   const entry = sortedBody()[idx]; if (!entry) return;
@@ -740,7 +741,7 @@ function body() {
   const latest = list[list.length - 1];
 
   $('#app').innerHTML = `
-  <header><h1>قياساتي</h1><button class="link" onclick="go('home')">رجوع</button></header>
+  <header><h1>⚖️ قياساتي</h1><button class="link" onclick="go('home')">رجوع</button></header>
 
   ${latest ? `
   <div class="lbl">آخر قياس — ${fmt(latest.date)}${latest.source === 'inbody' ? ' · InBody' : ''}</div>
@@ -786,7 +787,7 @@ function body() {
     <div class="seqrow"><em>الدهون PBF (%)</em>${INBODY_HISTORY.pbf.map(n1).join('   ')}</div>
   </div>
 
-  <div class="lbl">خطة غذائية</div>
+  <div class="lbl">🥗 خطة غذائية</div>
   ${S.diet ? `
   <div class="rstats">
     <div><b>${nK(S.diet.calories)}</b><i>سعرة/يوم</i></div>
@@ -910,7 +911,7 @@ async function attachMeal(inp) {
       calories: Math.round(d.calories), protein: Math.round(d.protein),
       carbs: Math.round(d.carbs), fat: Math.round(d.fat),
     });
-    foodDay = null; save(); msg('تمت إضافة الوجبة');
+    foodDay = null; save(); msg('🍽️ تمت إضافة الوجبة');
   } catch (e) { msg(arErr(e.message)); }
   mealBusy = false; mealPendingImg = null; render();
 }
@@ -943,7 +944,7 @@ function food() {
   const pastDays = mealDates().filter(d => d !== dt);
 
   $('#app').innerHTML = `
-  <header><h1>الأكل${isToday ? ' اليوم' : ''}</h1><button class="link" onclick="go('home')">رجوع</button></header>
+  <header><h1>🍽️ الأكل${isToday ? ' اليوم' : ''}</h1><button class="link" onclick="go('home')">رجوع</button></header>
 
   ${!isToday ? `<div class="lbl">${fmt(dt)}</div>` : ''}
   ${target ? `
@@ -1005,7 +1006,7 @@ function ask() {
   if (!S.key) return askSetup();
   const c = S.chat || [];
   $('#app').innerHTML = `
-  <header><h1>اسأل</h1>
+  <header><h1>🤖 اسأل</h1>
     <div class="hlinks">
       ${c.length ? '<button class="link" onclick="clearChat()">مسح</button>' : ''}
       <button class="link" onclick="changeKey()">المفتاح</button>
@@ -1048,7 +1049,7 @@ function ask() {
 
 function askSetup() {
   $('#app').innerHTML = `
-  <header><h1>اسأل</h1><button class="link" onclick="go('home')">رجوع</button></header>
+  <header><h1>🤖 اسأل</h1><button class="link" onclick="go('home')">رجوع</button></header>
   <input type="text" id="keyIn" class="keyin" placeholder="مفتاح Gemini" value="${esc(S.key || '')}"
          oninput="onKeyInput()" onpaste="setTimeout(onKeyInput,30)">
   <div class="keyerr" id="keyErr"></div>`;
@@ -1102,7 +1103,7 @@ async function trySaveKey(k) {
   const old = S.key; S.key = k;
   try {
     await gemini([{ text: 'رد بكلمة واحدة: جاهز' }], null, { max: 64, sys: 'رد بكلمة واحدة فقط.' });
-    save(); msg('المساعد صار جاهز'); render();
+    save(); msg('🤖 المساعد صار جاهز'); render();
   } catch (e) {
     S.key = old;
     const e2 = $('#keyErr');
