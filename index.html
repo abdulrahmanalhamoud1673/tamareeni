@@ -216,6 +216,18 @@ header .sub{color:var(--mut);font-size:14px;font-variant-numeric:tabular-nums}
 .setting input{width:80px;background:none;border:1px solid var(--line);border-radius:9px;
   padding:8px;text-align:center;font-weight:600;font-variant-numeric:tabular-nums}
 
+/* ---------- قياساتي ---------- */
+.mform{display:flex;flex-direction:column;gap:10px;margin-top:4px}
+.mform label{display:flex;flex-direction:column;gap:5px;font-size:13px;color:var(--mut)}
+.mform input{background:var(--soft);border:1px solid var(--line);border-radius:10px;
+  padding:12px 14px;font-size:16px;font-weight:600;color:var(--tx);font-variant-numeric:tabular-nums}
+.chartbox{border:1px solid var(--line);border-radius:12px;padding:14px 16px 12px;margin-top:14px}
+.chartrange{display:flex;justify-content:space-between;font-size:11.5px;color:var(--mut);margin-top:8px;direction:ltr}
+.histbox{border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+.seqrow{color:var(--mut);font-size:13.5px;font-variant-numeric:tabular-nums;direction:rtl;margin-bottom:11px;line-height:1.6}
+.seqrow:last-child{margin-bottom:0}
+.seqrow em{font-style:normal;display:block;margin-bottom:3px;color:var(--tx);font-weight:600;font-size:12.5px}
+
 #msg{position:fixed;left:50%;transform:translate(-50%,14px);bottom:100px;z-index:40;opacity:0;
   background:var(--tx);color:var(--bg);padding:11px 20px;border-radius:10px;font-size:15px;
   transition:.2s;pointer-events:none;max-width:88vw;text-align:center}

@@ -100,9 +100,23 @@ const PROGRAM = {
   ]},
 };
 
+/* ===== بيانات آخر بطاقة InBody (٣٠ أغسطس ٢٠٢٦) ===== */
+const HEIGHT_CM = 178.5;
+const INBODY_CARD = {
+  date: '2026-08-30', weight: 82.7, smm: 35.9, bfm: 19.9, pbf: 24.0, bmi: 26.0,
+  visceral: 8, bmr: 1727, score: 74, target: 73.9, whr: 0.96,
+};
+// القياسات الثمانية المطبوعة على البطاقة، من الأقدم للأحدث. البطاقة نفسها لا تعطي
+// تاريخاً دقيقاً لكل نقطة (فقط لآخر ٥ قياسات)، فلا نخترع تواريخ لها.
+const INBODY_HISTORY = {
+  weight: [76.3, 77.3, 72.9, 78.2, 74.6, 77.3, 76.6, 82.7],
+  smm:    [33.5, 34.7, 33.2, 35.9, 34.0, 35.1, 35.5, 35.9],
+  pbf:    [22.6, 21.1, 20.2, 19.6, 19.6, 20.2, 18.7, 24.0],
+};
+
 /* ===== التخزين ===== */
 const KEY = 'tamareeni';
-let S = Object.assign({ sessions: [], active: null, rest: 90, notes: {}, bar: 20 },
+let S = Object.assign({ sessions: [], active: null, rest: 90, notes: {}, bar: 20, body: [], diet: null },
                       JSON.parse(localStorage.getItem(KEY) || '{}'));
 // الصور تُعرض أثناء الجلسة فقط ولا تُخزَّن (حتى لا تمتلئ ذاكرة المتصفح)
 const save = () => localStorage.setItem(KEY, JSON.stringify(S, (k, v) => k === '_img' ? undefined : v));
@@ -263,8 +277,8 @@ let page = 'home';
 // إعادة الرسم تحافظ على موضعك في الصفحة. مرّر true فقط عند الانتقال لشاشة أخرى.
 function render(toTop) {
   const y = window.scrollY;
-  const OVERLAY = ['ask', 'report'];   // شاشات تُعرض حتى لو في تمرين شغّال
-  ({ home, workout, log, ask, report }[S.active && !OVERLAY.includes(page) ? 'workout' : page])();
+  const OVERLAY = ['ask', 'report', 'body'];   // شاشات تُعرض حتى لو في تمرين شغّال
+  ({ home, workout, log, ask, report, body }[S.active && !OVERLAY.includes(page) ? 'workout' : page])();
   window.scrollTo(0, toTop ? 0 : y);
 }
 const go = p => { page = p; render(true); };
@@ -298,6 +312,11 @@ function home() {
     <i>${S.sessions.length
       ? plur(weekStats(7).days, 'تمرين واحد', 'تمرينان', 'تمارين', 'تمريناً') + ' آخر ٧ أيام'
       : 'ابدأ لتشوفه'}</i>
+  </button>
+
+  <button class="rowlink" onclick="go('body')">
+    <span>قياساتي</span>
+    <i>${S.body.length ? n1(sortedBody().slice(-1)[0].weight) + ' كغم آخر قياس' : 'InBody جاهز'}</i>
   </button>
 
   <div class="setting">
@@ -560,7 +579,8 @@ function restore(inp) {
       const d = JSON.parse(r.result);
       if (!Array.isArray(d.sessions)) throw 0;
       if (!confirm('سيتم استبدال بياناتك الحالية. متابعة؟')) return;
-      S = Object.assign({ sessions: [], active: null, rest: 90 }, d);
+      S = Object.assign({ sessions: [], active: null, rest: 90, notes: {}, bar: 20, body: [], diet: null }, d);
+      seedInBody();
       save(); render(true); msg('تم الاسترجاع');
     } catch (e) { msg('الملف غير صالح'); }
   };
@@ -645,6 +665,162 @@ ${last || 'لا يوجد'}
 ثم "لازم تنتبه:" وسطر أو سطرين على التمارين الواقفة مكانها أو الحجم الناقص.
 ثم "الأسبوع الجاي:" وسطرين إجراءات محددة بأرقام (مثلاً: زِد السكوات لـ ٢٥ كغم، أو أضف مجموعة رابعة لتمرين كذا).
 لا تتجاوز ١٤٠ كلمة إجمالاً.`;
+}
+
+/* ===== قياساتي وخطة التغذية ===== */
+let dietBusy = false;
+const bmiOf = w => Math.round((w / ((HEIGHT_CM / 100) ** 2)) * 10) / 10;
+const sortedBody = () => S.body.slice().sort((a, b) => a.date < b.date ? -1 : a.date > b.date ? 1 : 0);
+
+// تُضاف مرة واحدة: بيانات بطاقة الـ InBody الحقيقية
+function seedInBody() {
+  if (S.body.some(b => b.source === 'inbody' && b.date === INBODY_CARD.date)) return;
+  S.body.push({
+    date: INBODY_CARD.date, weight: INBODY_CARD.weight, smm: INBODY_CARD.smm,
+    pbf: INBODY_CARD.pbf, bmi: INBODY_CARD.bmi, visceral: INBODY_CARD.visceral,
+    bmr: INBODY_CARD.bmr, score: INBODY_CARD.score, source: 'inbody',
+  });
+  save();
+}
+
+function addBody() {
+  const w = +$('#mW').value;
+  if (!(w > 0)) return msg('اكتب الوزن أولاً');
+  const f = $('#mF').value ? +$('#mF').value : null;
+  const m = $('#mM').value ? +$('#mM').value : null;
+  const dt = today();
+  const entry = { date: dt, weight: w, pbf: f, smm: m, bmi: bmiOf(w) };
+  const i = S.body.findIndex(b => b.date === dt && b.source !== 'inbody');
+  if (i >= 0) S.body[i] = entry; else S.body.push(entry);
+  save(); render(); msg('تم حفظ القياس');
+}
+function delBody(idx) {
+  const entry = sortedBody()[idx]; if (!entry) return;
+  if (!confirm(`حذف قياس ${fmt(entry.date)} (${n1(entry.weight)} كغم)؟`)) return;
+  const real = S.body.indexOf(entry);
+  if (real >= 0) S.body.splice(real, 1);
+  save(); render();
+}
+
+function weightChart(list) {
+  const W = 320, H = 92, P = 10;
+  const vals = list.map(b => b.weight);
+  const mn = Math.min(...vals), mx = Math.max(...vals), rg = (mx - mn) || 1;
+  const x = i => list.length === 1 ? W / 2 : P + i * (W - P * 2) / (list.length - 1);
+  const y = v => H - P - ((v - mn) / rg) * (H - P * 2);
+  const d = vals.map((v, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(' ');
+  return `<div class="chartbox">
+    <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" style="width:100%;height:${H}px;display:block">
+      <path d="${d}" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+      ${vals.map((v, i) => `<circle cx="${x(i).toFixed(1)}" cy="${y(v).toFixed(1)}" r="2.6" fill="currentColor"/>`).join('')}
+    </svg>
+    <div class="chartrange"><span>${n1(mn)}</span><span>${n1(mx)} كغم</span></div>
+  </div>`;
+}
+
+function body() {
+  const list = sortedBody();
+  const latest = list[list.length - 1];
+
+  $('#app').innerHTML = `
+  <header><h1>قياساتي</h1><button class="link" onclick="go('home')">رجوع</button></header>
+
+  ${latest ? `
+  <div class="lbl">آخر قياس — ${fmt(latest.date)}${latest.source === 'inbody' ? ' · InBody' : ''}</div>
+  <div class="rstats">
+    <div><b>${n1(latest.weight)}</b><i>كغم</i></div>
+    <div><b>${latest.pbf != null ? n1(latest.pbf) + '%' : '—'}</b><i>نسبة الدهون</i></div>
+    <div><b>${latest.smm != null ? n1(latest.smm) : '—'}</b><i>عضلات كغم</i></div>
+  </div>
+  <div class="rlist" style="margin-top:9px">
+    ${latest.bmi != null ? `<div class="rrow"><span>مؤشر كتلة الجسم</span><b>${n1(latest.bmi)}</b></div>` : ''}
+    ${latest.visceral != null ? `<div class="rrow"><span>الدهون الحشوية</span><b>${latest.visceral}</b></div>` : ''}
+    ${latest.bmr != null ? `<div class="rrow"><span>الأيض الأساسي</span><b>${nK(latest.bmr)} سعرة</b></div>` : ''}
+    ${latest.score != null ? `<div class="rrow"><span>نتيجة InBody</span><b>${latest.score}/100</b></div>` : ''}
+    <div class="rrow"><span>الوزن المستهدف</span><b>${n1(INBODY_CARD.target)} كغم</b></div>
+  </div>
+  ${list.length > 1 ? weightChart(list) : ''}
+  ` : '<div class="empty">أضف أول قياس تحت</div>'}
+
+  <div class="lbl">أضف قياساً</div>
+  <div class="mform">
+    <label>الوزن (كغم)<input type="number" inputmode="decimal" id="mW" placeholder="مثال 80"></label>
+    <label>نسبة الدهون % — اختياري<input type="number" inputmode="decimal" id="mF" placeholder="اختياري"></label>
+    <label>كتلة العضلات كغم — اختياري<input type="number" inputmode="decimal" id="mM" placeholder="اختياري"></label>
+  </div>
+  <button class="btn" onclick="addBody()">حفظ القياس</button>
+
+  ${list.length ? `
+  <div class="lbl">القياسات السابقة</div>
+  <div class="rlist">
+    ${list.slice().reverse().map((b, i) => `
+      <div class="rrow">
+        <span>${fmt(b.date)}${b.source === 'inbody' ? ' · InBody' : ''}</span>
+        <b>${n1(b.weight)} كغم${b.pbf != null ? ' · ' + n1(b.pbf) + '%' : ''}</b>
+        ${trash(`delBody(${list.length - 1 - i})`, 'حذف القياس')}
+      </div>`).join('')}
+  </div>` : ''}
+
+  <div class="lbl">من بطاقة InBody الأخيرة</div>
+  <p class="muted sm">القياسات الثمانية المطبوعة على البطاقة، من الأقدم للأحدث:</p>
+  <div class="histbox">
+    <div class="seqrow"><em>الوزن (كغم)</em>${INBODY_HISTORY.weight.map(n1).join('   ')}</div>
+    <div class="seqrow"><em>العضلات SMM (كغم)</em>${INBODY_HISTORY.smm.map(n1).join('   ')}</div>
+    <div class="seqrow"><em>الدهون PBF (%)</em>${INBODY_HISTORY.pbf.map(n1).join('   ')}</div>
+  </div>
+
+  <div class="lbl">خطة غذائية</div>
+  ${S.diet ? `<div class="aibox">${fmtAi(S.diet.text)}<div class="raw2">${esc(fmt(S.diet.date))}</div></div>` : ''}
+  <button class="btn ${S.diet ? 'quiet' : ''}" id="dietBtn" onclick="makeDiet()" ${dietBusy ? 'disabled' : ''}>
+    ${dietBusy ? 'عم يجهّز الخطة...' : S.diet ? 'حدّث الخطة' : 'اطلب خطة غذائية'}</button>
+  ${!S.key ? '<p class="muted sm">بدّه تفعيل المساعد مرة وحدة من صفحة «اسأل».</p>' : ''}
+  `;
+}
+
+async function makeDiet() {
+  if (!S.key) { msg('فعّل المساعد أول من صفحة اسأل'); return go('ask'); }
+  if (dietBusy) return;
+  dietBusy = true; render();
+  try {
+    const t = await gemini([{ text: dietPrompt() }], null, { max: 3000, sys: DIET_SYS });
+    S.diet = { date: today(), text: t };
+  } catch (e) { msg(arErr(e.message)); }
+  dietBusy = false; save(); render();
+}
+
+const DIET_SYS = `أنت أخصائي تغذية عملي تساعد متدرّب حديد في الأردن. جاوب بالعربية العامية الأردنية البسيطة، مباشر وبدون مقدمات.
+
+قواعد:
+- استخدم أرقامه الحقيقية المعطاة لك فقط. لا تخترع رقماً أبداً.
+- أعطِ رقماً محدداً للسعرات اليومية، ورقماً لكل عنصر (بروتين/كارب/دهون بالغرام).
+- اقترح توزيع وجبات بسيط (فطور، غدا، عشا، سناك) بأكل عادي متوفر بالأردن: دجاج، لحمة، أرز، خبز، بيض، لبنة، جبنة، خضار، فواكه، شوفان. بدون مكملات أو أطعمة غريبة.
+- خلّيه عملياً وقابلاً للتكرار يومياً، مش قائمة أطعمة معقدة أو صارمة.
+- أكمل الرد حتى النهاية، لا تقطعه أبداً. لا تتجاوز ٢٢٠ كلمة.
+- أنهِ دائماً بجملة إنك لست طبيباً ولا أخصائي تغذية مرخّص، وهذا إرشاد عام، وإذا في حالة صحية يراجع مختص.`;
+
+function dietPrompt() {
+  const list = sortedBody();
+  const latest = list[list.length - 1];
+  const w = weekStats(7);
+  return `بيانات المتدرّب:
+العمر: ٢٣ سنة، ذكر، الطول ${HEIGHT_CM} سم
+الوزن الحالي: ${latest ? n1(latest.weight) : n1(INBODY_CARD.weight)} كغم
+الوزن المستهدف: ${n1(INBODY_CARD.target)} كغم (فرق ${n1(INBODY_CARD.weight - INBODY_CARD.target)} كغم تقريباً)
+نسبة الدهون: ${latest && latest.pbf != null ? n1(latest.pbf) + '%' : n1(INBODY_CARD.pbf) + '% (من آخر InBody)'}
+كتلة العضلات: ${latest && latest.smm != null ? n1(latest.smm) + ' كغم' : n1(INBODY_CARD.smm) + ' كغم (من آخر InBody)'}
+معدل الأيض الأساسي (BMR): ${INBODY_CARD.bmr} سعرة
+الدهون الحشوية: ${INBODY_CARD.visceral} (طبيعي حتى ٩)
+نسبة الخصر للورك: ${INBODY_CARD.whr} (الطبيعي ٠.٨٠–٠.٩٠، عنده أعلى قليلاً)
+تمارين حديد آخر ٧ أيام: ${w.days} تمارين
+
+الهدف: تخفيف دهون مع الحفاظ على كتلة العضلات (الوزن المستهدف أقل من الحالي).
+
+اكتب خطة غذائية بهذا الترتيب بالضبط:
+"السعرات اليومية:" رقم واحد بالسعرة.
+"البروتين/الكارب/الدهون:" ثلاث أرقام بالغرام.
+"يومك:" فطور - غدا - عشا - سناك، كل وحدة بجملة قصيرة بأكل حقيقي.
+"نصيحة:" جملة عملية واحدة.
+ثم جملة الإخلاء الطبي المطلوبة.`;
 }
 
 /* ===== المساعد الذكي (Gemini المجاني) ===== */
@@ -917,6 +1093,7 @@ async function gemini(parts, history, opts) {
 }
 
 /* ===== الإقلاع ===== */
+seedInBody();
 render();
 if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('sw.js').catch(() => {});
 addEventListener('beforeunload', e => { if (S.active) { e.preventDefault(); e.returnValue = ''; } });
