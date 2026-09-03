@@ -416,7 +416,12 @@ function workout() {
   $('#app').innerHTML = `
   <header>
     <div><h1 class="dlbl" style="color:${DAY_ACC[a.day] || 'var(--tx)'}"><span class="dicon">${DAY_ICON[a.day] || ''}</span>${PROGRAM[a.day].name}</h1><div class="sub" id="clock">0:00</div></div>
-    <button class="link" onclick="finish()">إنهاء</button>
+    <div class="hlinks">
+      <button class="link iconbtn" onclick="cancel()" aria-label="رجوع — إلغاء بلا حفظ">
+        <svg viewBox="0 0 24 24" ${ICON_S}><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+      <button class="link" onclick="finish()">إنهاء</button>
+    </div>
   </header>
 
   ${groupSS(a.entries).map(g =>
