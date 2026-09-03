@@ -100,20 +100,30 @@ const PROGRAM = {
   ]},
 };
 
-// لون وإيموجي مميز لكل يوم تمرين — إيموجي "حيوان قوة" لكل يوم بدل رمز حرفي،
-// نفس لغة القوة اللي بيستخدمها رياضيين كمال الأجسام لوصف كل عضلة:
-// صدر = غوريلا (رمز القوة والصدر الكلاسيكي)، ظهر = نسر (الأجنحة)،
-// أكتاف = أسد (اللبدة العريضة، "ملك الجيم")، أرجل = نمر (سرعة وقوة الأرجل)
+// لون وأيقونة SVG مصمّمة مخصوص لكل يوم تمرين (بدل إيموجي جاهز) — عائلة أيقونات
+// متّسقة بلغة بصرية واحدة: بار حديد + الوضعية المميّزة لكل يوم، بنفس سماكة الخط
+// المستخدمة بأيقونة الكاميرا بصفحة "اسأل". stroke="currentColor" يعني لونها
+// يتبع أي عنصر أب معطى color، فما في حاجة نلوّنها كل مرة يدوياً.
 const DAY_ACC = { d1: 'var(--d1)', d2: 'var(--d2)', d3: 'var(--d3)', d4: 'var(--d4)' };
-const DAY_EMOJI = { d1: '🦍', d2: '🦅', d3: '🦁', d4: '🐅' };
+const ICON_S = 'fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"';
+const DAY_ICON = {
+  // صدر: بار على مقعد ضغط
+  d1: `<svg viewBox="0 0 24 24" ${ICON_S}><path d="M3 11h18"/><path d="M5 8v6M3.3 9v4"/><path d="M19 8v6M20.7 9v4"/><path d="M8 17h8"/><path d="M9 17v3M15 17v3"/></svg>`,
+  // ظهر: بار عقلة وجسم معلّق
+  d2: `<svg viewBox="0 0 24 24" ${ICON_S}><path d="M4 6h16"/><path d="M4 6v2.2M20 6v2.2"/><path d="M9 6.5c-.6 2.3.3 3.8.9 5.2.6 1.5.1 3-1.4 5"/><path d="M15 6.5c.6 2.3-.3 3.8-.9 5.2-.6 1.5-.1 3 1.4 5"/></svg>`,
+  // أكتاف: بار مرفوع فوق الرأس بذراعين
+  d3: `<svg viewBox="0 0 24 24" ${ICON_S}><path d="M5 7h14"/><path d="M6 5v4M4.3 5.5v3"/><path d="M18 5v4M19.7 5.5v3"/><path d="M7.3 7l4 6.3M16.7 7l-4 6.3"/><path d="M12 13.3v6.5"/></svg>`,
+  // أرجل: بار سكوات على وضعية نزول
+  d4: `<svg viewBox="0 0 24 24" ${ICON_S}><path d="M6 6h12"/><path d="M7 4v4M5.3 4.5v3"/><path d="M17 4v4M18.7 4.5v3"/><path d="M12 6v4.3"/><path d="M12 10.3c-2 0-3.3 1.5-3.6 4-.2 1.7-.4 3-1.4 5"/><path d="M12 10.3c2 0 3.3 1.5 3.6 4 .2 1.7.4 3 1.4 5"/></svg>`,
+};
 
-// أيقونات شريط التنقل السفلي — [الصفحة، الإيموجي، الاسم]
+// أيقونات شريط التنقل السفلي — نفس أسلوب أيقونات الأيام، رسم مخصوص لا إيموجي
 const TABS = [
-  ['home', '🏋️', 'تمرين'],
-  ['food', '🍽️', 'الأكل'],
-  ['body', '⚖️', 'قياسات'],
-  ['report', '📈', 'تقرير'],
-  ['ask', '🤖', 'اسأل'],
+  ['home', `<svg viewBox="0 0 24 24" ${ICON_S}><path d="M6.5 9v6M4.5 10v4"/><path d="M17.5 9v6M19.5 10v4"/><path d="M9 12h6"/></svg>`, 'تمرين'],
+  ['food', `<svg viewBox="0 0 24 24" ${ICON_S}><path d="M7 3v6a1.6 1.6 0 1 0 3.2 0V3M8.6 9v12"/><path d="M15.5 3c-1.2.3-2 2-2 4.2 0 1.8.6 3 1.6 3.6V21"/></svg>`, 'الأكل'],
+  ['body', `<svg viewBox="0 0 24 24" ${ICON_S}><path d="M12 3v3.2"/><path d="M5 6.2h14"/><path d="M7 6.2l-3 6.3a3 3 0 0 0 6 0l-3-6.3z"/><path d="M17 6.2l-3 6.3a3 3 0 0 0 6 0l-3-6.3z"/><path d="M8.5 21h7"/><path d="M12 6.2V21"/></svg>`, 'قياسات'],
+  ['report', `<svg viewBox="0 0 24 24" ${ICON_S}><path d="M4 19V9.5M9.5 19V5M15 19v-6M20 19v-4"/><path d="M4 19h16"/></svg>`, 'تقرير'],
+  ['ask', `<svg viewBox="0 0 24 24" ${ICON_S}><path d="M3.5 12c0-4.4 3.8-7.8 8.5-7.8s8.5 3.4 8.5 7.8-3.8 7.8-8.5 7.8c-1.1 0-2.2-.2-3.2-.6L4.5 21l1-4.1C4.2 15.6 3.5 13.9 3.5 12z"/><circle cx="8.7" cy="12" r=".9" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r=".9" fill="currentColor" stroke="none"/><circle cx="15.3" cy="12" r=".9" fill="currentColor" stroke="none"/></svg>`, 'اسأل'],
 ];
 
 // ثابتان بدل إعدادات: مدة راحة موصى فيها لبرنامج تضخيم عضلي مختلط
@@ -308,7 +318,15 @@ function render(toTop) {
 }
 const go = p => { page = p; render(true); };
 
-// شريط التنقل السفلي — مخفي أثناء التمرين فقط (شاشة مركّزة بلا تشتيت)
+// شريط التنقل السفلي — يُبنى مرة وحدة من TABS، ثم كل رسمة بس تبدّل حالة "نشط"
+function buildTabbar() {
+  const bar = $('#tabbar');
+  bar.innerHTML = TABS.map(([p, icon, label]) => {
+    const reset = p === 'food' ? 'foodDay=null;' : p === 'ask' ? 'askEx=null;' : '';
+    return `<button data-p="${p}" onclick="${reset}go('${p}')"><span class="ti">${icon}</span><span class="tl">${label}</span></button>`;
+  }).join('');
+}
+// مخفي أثناء التمرين فقط (شاشة مركّزة بلا تشتيت)
 function renderTabs(active) {
   const bar = $('#tabbar');
   bar.classList.toggle('hide', active === 'workout');
@@ -332,7 +350,7 @@ function home() {
     ${keys.map(k => {
       const l = done.filter(s => s.day === k).pop();
       return `<button class="day" style="--dc:${DAY_ACC[k]}" onclick="start('${k}')">
-        <b>${DAY_EMOJI[k]} ${PROGRAM[k].name}</b>
+        <b class="dlbl"><span class="dicon" style="color:${DAY_ACC[k]}">${DAY_ICON[k]}</span>${PROGRAM[k].name}</b>
         <span>${l ? ago(l.date) : k === next ? 'ابدأ من هنا' : '—'}</span>
       </button>`;
     }).join('')}
@@ -379,7 +397,7 @@ function workout() {
   const a = S.active;
   $('#app').innerHTML = `
   <header>
-    <div><h1 style="color:${DAY_ACC[a.day] || 'var(--tx)'}">${DAY_EMOJI[a.day] || ''} ${PROGRAM[a.day].name}</h1><div class="sub" id="clock">0:00</div></div>
+    <div><h1 class="dlbl" style="color:${DAY_ACC[a.day] || 'var(--tx)'}"><span class="dicon">${DAY_ICON[a.day] || ''}</span>${PROGRAM[a.day].name}</h1><div class="sub" id="clock">0:00</div></div>
     <button class="link" onclick="finish()">إنهاء</button>
   </header>
 
@@ -1295,6 +1313,7 @@ async function gemini(parts, history, opts) {
 
 /* ===== الإقلاع ===== */
 seedInBody();
+buildTabbar();
 render();
 // المتصفح بشكل افتراضي بيفحص وجود نسخة جديدة من sw.js كل ٢٤ ساعة تقريباً بس —
 // حتى لو المستخدم سكّر التطبيق وفتحه ألف مرة. نفرض فحصاً فورياً كل ما يفتح الصفحة،
