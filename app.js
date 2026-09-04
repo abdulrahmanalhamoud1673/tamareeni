@@ -226,6 +226,8 @@ function last(id) {
   return null;
 }
 const setText = (id, s) => ex(id).sec ? `${s.r} ث` : ex(id).bw ? `${s.r}` : `${n1(s.w)}×${s.r}`;
+// وحدة "الرقم القياسي" حسب نوع التمرين — وزن عادي، أو تكرار/ثانية لتمارين وزن الجسم والوقت
+const exUnit = id => { const e = ex(id); return e.sec ? 'ث' : e.bw ? 'عدة' : 'كغم'; };
 
 /* ===== حاسبة توزيع أوزان البار ===== */
 const PLATES = [20, 15, 10, 5, 2.5, 1.25];
@@ -284,15 +286,19 @@ function readyToAdd(id, day) {
 /* ===== حسابات التقرير الأسبوعي ===== */
 const inLast = d => S.sessions.filter(s => since(s.date) < d);
 
-// سجل تمرين معيّن عبر الزمن: أقصى وزن وحجم كل جلسة
+// سجل تمرين معيّن عبر الزمن: أقصى "رقم قياسي" وحجم كل جلسة. المقياس نفسه يختلف
+// حسب نوع التمرين — وزن للعادي، تكرار/ثواني لتمارين وزن الجسم والوقت (بدون هذا
+// التمييز كانت plank/lunges/trx_row وغيرها تُقرأ دايماً وزنها صفر، فتختفي تماماً
+// من التقرير والأرقام القياسية رغم إنها فعلاً بتتطوّر).
 function exHistory(id) {
+  const useReps = ex(id).bw || ex(id).sec;
   const out = [];
   for (const s of S.sessions) {
     const it = s.entries.find(e => e.ex === id);
     if (!it || !it.sets.length) continue;
     out.push({
       t: new Date(s.date + 'T12:00:00').getTime(),
-      max: Math.max(...it.sets.map(x => x.w || 0)),
+      max: useReps ? Math.max(...it.sets.map(x => x.r || 0)) : Math.max(...it.sets.map(x => x.w || 0)),
       reps: it.sets.reduce((a, x) => a + (x.r || 0), 0),
     });
   }
@@ -336,7 +342,10 @@ function projection(id) {
   return { now: last.max, goal, weeks: n, rate };
 }
 function allProjections() {
-  const ids = [...new Set(Object.values(PROGRAM).flatMap(p => p.items.map(i => i[0])))];
+  // الأهداف المستديرة (nextGoal) مبنية على قفزات كيلوغرامية، فما تلائم تمارين
+  // وزن الجسم/الوقت — نستثنيها من التوقّعات، مش لأنها ما تتطوّر
+  const ids = [...new Set(Object.values(PROGRAM).flatMap(p => p.items.map(i => i[0])))]
+    .filter(id => !ex(id).bw && !ex(id).sec);
   return ids.map(id => ({ id, p: projection(id) })).filter(x => x.p)
             .sort((a, b) => a.p.weeks - b.p.weeks).slice(0, 5);
 }
@@ -536,11 +545,12 @@ function tick(i, j) {
   s.done = !s.done;
   if (s.done) {
     buzz(25);
-    // رقم قياسي: وزن أعلى من أي وزن سبق سجّلته بهذا التمرين بجلسات سابقة
+    // رقم قياسي: أعلى وزن (أو تكرار/ثواني لتمارين وزن الجسم والوقت) من أي جلسة سابقة
     const e = ex(it.ex);
-    if (!e.bw && !e.sec && s.w > 0) {
+    const cur = (e.bw || e.sec) ? s.r : s.w;
+    if (cur > 0) {
       const h = exHistory(it.ex);
-      if (h.length && s.w > Math.max(...h.map(x => x.max))) msg('🏆 رقم قياسي جديد', 'pr');
+      if (h.length && cur > Math.max(...h.map(x => x.max))) msg('🏆 رقم قياسي جديد', 'pr');
     }
     // داخل السوبرست: انتقل للتمرين التالي مباشرة بلا راحة
     const nx = S.active.entries[i + 1];
@@ -734,11 +744,11 @@ function report() {
 
   ${ch.up.length ? `<div class="lbl">⬆️ تطوّرت</div>
   <div class="rlist">${ch.up.map(c => `<div class="rrow"><span>${esc(ex(c.id).ar)}</span>
-    <b class="good">${n1(c.from)} ← ${n1(c.to)}${c.reps ? ' عدة' : ''}</b></div>`).join('')}</div>` : ''}
+    <b class="good">${n1(c.from)} ← ${n1(c.to)} ${c.reps ? 'عدة' : exUnit(c.id)}</b></div>`).join('')}</div>` : ''}
 
   ${ch.flat.length ? `<div class="lbl">⏸️ واقف مكانه</div>
   <div class="rlist">${ch.flat.map(c => `<div class="rrow"><span>${esc(ex(c.id).ar)}</span>
-    <b class="warn">${n1(c.at)} كغم</b></div>`).join('')}</div>` : ''}
+    <b class="warn">${n1(c.at)} ${exUnit(c.id)}</b></div>`).join('')}</div>` : ''}
 
   ${pr.length ? `<div class="lbl">🎯 بهالمعدل، رح توصل</div>
   <div class="rlist">${pr.map(x => `<div class="rrow proj">
@@ -784,8 +794,8 @@ function reportPrompt() {
 
 أرقام آخر ٧ أيام: ${w.days} تمارين، ${w.sets} مجموعة، ${Math.round(w.kg)} كغم إجمالي.
 الأسبوع اللي قبله: ${p2.days - w.days} تمارين، ${Math.round(p2.kg - w.kg)} كغم.
-تطوّر فيها: ${ch.up.map(c => `${ex(c.id).ar} ${c.from}→${c.to}`).join('، ') || 'لا شيء'}
-واقفة مكانها: ${ch.flat.map(c => `${ex(c.id).ar} عند ${c.at}`).join('، ') || 'لا شيء'}
+تطوّر فيها: ${ch.up.map(c => `${ex(c.id).ar} ${c.from}→${c.to} ${c.reps ? 'عدة' : exUnit(c.id)}`).join('، ') || 'لا شيء'}
+واقفة مكانها: ${ch.flat.map(c => `${ex(c.id).ar} عند ${c.at} ${exUnit(c.id)}`).join('، ') || 'لا شيء'}
 ملاحظاته على الأجهزة: ${notes || 'لا يوجد'}
 حالة تعافي كل يوم الآن (محسوبة من وقت آخر تمرين فعلي، مو تخمين): ${rec}
 
@@ -802,15 +812,17 @@ ${last || 'لا يوجد'}
 }
 
 /* ===== أرقامي القياسية ===== */
-// أفضل وزن سُجّل لهذا التمرين على الإطلاق (+ التاريخ وعدد التكرارات وقتها)
+// أفضل رقم سُجّل لهذا التمرين على الإطلاق (+ التاريخ)، وزن عادة أو تكرار/ثواني
+// لتمارين وزن الجسم والوقت
 function exBest(id) {
+  const useReps = ex(id).bw || ex(id).sec;
   let best = null;
   for (const s of S.sessions) {
     const it = s.entries.find(e => e.ex === id);
     if (!it || !it.sets.length) continue;
-    const max = Math.max(...it.sets.map(x => x.w || 0));
+    const max = useReps ? Math.max(...it.sets.map(x => x.r || 0)) : Math.max(...it.sets.map(x => x.w || 0));
     if (max <= 0 || (best && max <= best.max)) continue;
-    const reps = it.sets.filter(x => x.w === max).reduce((a, x) => a + (x.r || 0), 0);
+    const reps = useReps ? 0 : it.sets.filter(x => x.w === max).reduce((a, x) => a + (x.r || 0), 0);
     best = { date: s.date, max, reps };
   }
   return best;
@@ -862,7 +874,7 @@ function records() {
     ${g.items.map(({ id, b }) => `
       <div class="rrow" style="cursor:pointer" onclick="prOpen=prOpen==='${id}'?null:'${id}';render()">
         <span>${esc(ex(id).ar)}</span>
-        <b class="acc">${n1(b.max)} كغم${b.reps ? ' · ' + b.reps + ' عدة' : ''}</b>
+        <b class="acc">${n1(b.max)} ${exUnit(id)}${b.reps ? ' · ' + b.reps + ' عدة' : ''}</b>
       </div>
       ${prOpen === id ? `<div class="prchart" style="color:${DAY_ACC[g.k]}">
         ${exChart(exHistory(id).filter(x => x.max > 0))}
@@ -1015,15 +1027,20 @@ function dietPrompt() {
   const list = sortedBody();
   const latest = list[list.length - 1];
   const w = weekStats(7);
+  // أرقام الأيض/الدهون الحشوية/الخصر-ورك تُقرأ من آخر InBody مسجّل فعلياً (لو موجود)
+  // بدل ما تضل عالقة على أول بطاقة زُرعت بالتطبيق — نفس منطق الوزن والدهون تماماً
+  const bmr = latest && latest.bmr != null ? latest.bmr : INBODY_CARD.bmr;
+  const visceral = latest && latest.visceral != null ? latest.visceral : INBODY_CARD.visceral;
+  const whr = latest && latest.whr != null ? latest.whr : INBODY_CARD.whr;
   return `بيانات المتدرّب:
 العمر: ٢٣ سنة، ذكر، الطول ${HEIGHT_CM} سم
 الوزن الحالي: ${latest ? n1(latest.weight) : n1(INBODY_CARD.weight)} كغم
 الوزن المستهدف: ${n1(INBODY_CARD.target)} كغم (فرق ${n1(INBODY_CARD.weight - INBODY_CARD.target)} كغم تقريباً)
 نسبة الدهون: ${latest && latest.pbf != null ? n1(latest.pbf) + '%' : n1(INBODY_CARD.pbf) + '% (من آخر InBody)'}
 كتلة العضلات: ${latest && latest.smm != null ? n1(latest.smm) + ' كغم' : n1(INBODY_CARD.smm) + ' كغم (من آخر InBody)'}
-معدل الأيض الأساسي (BMR): ${INBODY_CARD.bmr} سعرة
-الدهون الحشوية: ${INBODY_CARD.visceral} (طبيعي حتى ٩)
-نسبة الخصر للورك: ${INBODY_CARD.whr} (الطبيعي ٠.٨٠–٠.٩٠، عنده أعلى قليلاً)
+معدل الأيض الأساسي (BMR): ${bmr} سعرة
+الدهون الحشوية: ${visceral} (طبيعي حتى ٩)
+نسبة الخصر للورك: ${whr} (الطبيعي ٠.٨٠–٠.٩٠)
 تمارين حديد آخر ٧ أيام: ${w.days} تمارين
 
 الهدف: تخفيف دهون مع الحفاظ على كتلة العضلات (الوزن المستهدف أقل من الحالي).`;
@@ -1422,7 +1439,7 @@ function context() {
   const ids = [...new Set(S.sessions.flatMap(s => s.entries.map(e => e.ex)))];
   const bests = ids.map(id => {
     const h = exHistory(id); if (!h.length) return null;
-    return `${ex(id).ar}: ${Math.max(...h.map(x => x.max))} كغم`;
+    return `${ex(id).ar}: ${Math.max(...h.map(x => x.max))} ${exUnit(id)}`;
   }).filter(Boolean).join('، ');
 
   const proj = allProjections().map(x =>
