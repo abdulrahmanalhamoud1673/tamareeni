@@ -175,6 +175,23 @@ const MONTHS = ['يناير','فبراير','مارس','أبريل','مايو','
 const fmt = k => { const d = new Date(k + 'T12:00:00'); return `${d.getDate()} ${MONTHS[d.getMonth()]}`; };
 const since = k => Math.round((new Date(today() + 'T12:00:00') - new Date(k + 'T12:00:00')) / 864e5);
 const ago = k => { const n = since(k); return n === 0 ? 'اليوم' : n === 1 ? 'أمس' : `قبل ${n} يوم`; };
+
+// بداية الأسبوع (الإثنين) للتاريخ المعطى، كسلسلة YYYY-MM-DD
+const weekStart = k => {
+  const d = new Date(k + 'T12:00:00'); const wd = (d.getDay() + 6) % 7;
+  d.setDate(d.getDate() - wd); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+};
+// عدد الأسابيع المتتالية اللي فيها تمرين واحد ع الأقل — نفس تعريف "الالتزام" بتطبيقات مشهورة
+// زي Hevy. الأسبوع الحالي ما بيكسر السلسلة لو لسا ما انتهى وما فيه تمرين بعد، بس ما بينحسب لحد ما يصير فيه.
+function streakWeeks() {
+  if (!S.sessions.length) return 0;
+  const weeks = new Set(S.sessions.map(s => weekStart(s.date)));
+  let cur = weekStart(today());
+  if (!weeks.has(cur)) { const d = new Date(cur + 'T12:00:00'); d.setDate(d.getDate() - 7); cur = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`; }
+  let n = 0;
+  while (weeks.has(cur)) { n++; const d = new Date(cur + 'T12:00:00'); d.setDate(d.getDate() - 7); cur = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`; }
+  return n;
+}
 const n1 = v => String(Math.round(v * 10) / 10);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[c]));
 const ex = id => EX[id] || { ar: id, inc: 2.5 };
@@ -352,9 +369,13 @@ function home() {
   const lastDay = done.length ? done[done.length - 1].day : null;
   const keys = Object.keys(PROGRAM);
   const next = lastDay ? keys[(keys.indexOf(lastDay) + 1) % keys.length] : keys[0];
+  const streak = streakWeeks();
 
   $('#app').innerHTML = `
-  <header><h1>🏋️ تماريني</h1>
+  <header>
+    <div><h1>🏋️ تماريني</h1>
+      ${streak ? `<div class="sub streak">🔥 ${plur(streak, 'أسبوع واحد', 'أسبوعين', 'أسابيع', 'أسبوعاً')} متتالي</div>` : ''}
+    </div>
     <div class="hlinks">
       <button class="link" onclick="go('log')">📅 السجل</button>
     </div></header>
@@ -800,9 +821,13 @@ function body() {
   $('#app').innerHTML = `
   <header><h1>⚖️ قياساتي</h1><button class="link" onclick="go('home')">رجوع</button></header>
 
-  <button class="btn" onclick="$('#inbodyIn').click()" ${inbodyBusy ? 'disabled' : ''}>
-    ${inbodyBusy ? 'عم أقرأ البطاقة...' : 'صوّر بطاقة InBody'}</button>
-  <input type="file" id="inbodyIn" accept="image/*" hidden onchange="attachInBody(this)">
+  ${inbodyBusy ? `<button class="btn" disabled>عم أقرأ البطاقة...</button>` : `
+  <div class="photobtns">
+    <button class="btn" onclick="$('#inbodyCam').click()">صوّر</button>
+    <button class="btn quiet" onclick="$('#inbodyLib').click()">من الألبوم</button>
+  </div>`}
+  <input type="file" id="inbodyCam" accept="image/*" capture="environment" hidden onchange="attachInBody(this)">
+  <input type="file" id="inbodyLib" accept="image/*" hidden onchange="attachInBody(this)">
   ${!S.key ? '<p class="muted sm">بدّه تفعيل المساعد مرة وحدة من صفحة «اسأل».</p>' : ''}
 
   ${latest ? `
@@ -1064,9 +1089,13 @@ function food() {
   </div>
 
   ${isToday ? `
-  <button class="btn" onclick="$('#mealIn').click()" ${mealBusy ? 'disabled' : ''}>
-    ${mealBusy ? 'عم يحلّل الوجبة...' : 'صوّر وجبة'}</button>
-  <input type="file" id="mealIn" accept="image/*" hidden onchange="attachMeal(this)">
+  ${mealBusy ? `<button class="btn" disabled>عم يحلّل الوجبة...</button>` : `
+  <div class="photobtns">
+    <button class="btn" onclick="$('#mealCam').click()">صوّر وجبة</button>
+    <button class="btn quiet" onclick="$('#mealLib').click()">من الألبوم</button>
+  </div>`}
+  <input type="file" id="mealCam" accept="image/*" capture="environment" hidden onchange="attachMeal(this)">
+  <input type="file" id="mealLib" accept="image/*" hidden onchange="attachMeal(this)">
   ${!S.key ? '<p class="muted sm">بدّه تفعيل المساعد مرة وحدة من صفحة «اسأل».</p>' : ''}
   ` : ''}
 
@@ -1134,11 +1163,17 @@ function ask() {
   </div>
 
   <div class="askbar">
-    <button onclick="$('#camIn').click()" aria-label="صورة">
+    <button onclick="$('#camIn').click()" aria-label="صوّر">
       <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7"
            stroke-linecap="round" stroke-linejoin="round">
         <path d="M3 8a2 2 0 0 1 2-2h2l1.5-2h7L17 6h2a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
         <circle cx="12" cy="13" r="3.4"/></svg>
+    </button>
+    <button onclick="$('#libIn').click()" aria-label="من الألبوم">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7"
+           stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="4" width="18" height="16" rx="2.5"/><circle cx="8.5" cy="9.5" r="1.6"/>
+        <path d="M21 15.5l-5.5-5.5a1.5 1.5 0 0 0-2.1 0L4 19"/></svg>
     </button>
     <input type="text" id="qIn" placeholder="اكتب سؤالك..." value="${esc(draft)}"
            oninput="draft=this.value" onkeydown="if(event.key==='Enter')send()">
@@ -1147,7 +1182,8 @@ function ask() {
            stroke-linecap="round" stroke-linejoin="round"><path d="M20 12H5M12 5l-7 7 7 7"/></svg>
     </button>
   </div>
-  <input type="file" id="camIn" accept="image/*" hidden onchange="attach(this)">`;
+  <input type="file" id="camIn" accept="image/*" capture="environment" hidden onchange="attach(this)">
+  <input type="file" id="libIn" accept="image/*" hidden onchange="attach(this)">`;
   const b = $('#chatBox'); if (b) b.scrollTop = b.scrollHeight;
   window.scrollTo(0, document.body.scrollHeight);
 }

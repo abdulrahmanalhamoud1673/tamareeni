@@ -46,6 +46,7 @@ header{
 }
 header h1{font-size:20px;font-weight:600;margin:0;letter-spacing:-.2px}
 header .sub{color:var(--mut);font-size:14px;font-variant-numeric:tabular-nums}
+header .sub.streak{color:var(--acc);font-weight:600;margin-top:2px}
 .link{background:none;border:0;color:var(--mut);font-size:15px;padding:6px 0}
 .link:active{color:var(--tx)}
 .hlinks{display:flex;gap:18px;align-items:center}
@@ -91,7 +92,8 @@ header .sub{color:var(--mut);font-size:14px;font-variant-numeric:tabular-nums}
 .daylist{display:flex;flex-direction:column;gap:10px}
 .day{
   display:flex;align-items:center;justify-content:space-between;gap:14px;
-  width:100%;text-align:right;background:none;color:inherit;
+  width:100%;text-align:right;color:inherit;
+  background:color-mix(in srgb, var(--dc, transparent) 6%, var(--bg));
   border:1px solid var(--line);border-inline-start:4px solid var(--dc,var(--line));border-radius:12px;padding:18px 18px;
 }
 .day:active{background:var(--soft)}
@@ -164,6 +166,8 @@ header h1.dlbl .dicon svg{width:21px;height:21px}
   border-radius:12px;padding:17px;font-size:17px;font-weight:600;margin-top:28px}
 .btn.quiet{background:none;color:var(--mut);border:1px solid var(--line);font-weight:400;margin-top:12px}
 .btn:active{opacity:.75}
+.photobtns{display:flex;gap:10px;margin-top:28px}
+.photobtns .btn{flex:1;width:auto;margin-top:0}
 
 /* ---------- مؤقت الراحة ---------- */
 #rest{position:fixed;left:0;right:0;bottom:0;z-index:20;transform:translateY(105%);transition:transform .22s ease;
