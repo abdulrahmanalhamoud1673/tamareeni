@@ -216,6 +216,10 @@ header h1.dlbl .dicon svg{width:21px;height:21px}
 .prow input{width:96px;background:var(--soft);border:1px solid var(--line);border-radius:9px;
   padding:9px;text-align:center;font-weight:700;font-size:16px;font-variant-numeric:tabular-nums}
 .pout{margin-top:10px;font-size:14.5px;line-height:1.7;font-variant-numeric:tabular-nums}
+.platerow{display:flex;align-items:flex-end;gap:5px;justify-content:center;flex-wrap:wrap;padding-top:6px}
+.disc{aspect-ratio:1;min-width:0;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  color:#fff;font-size:10px;font-weight:700;flex:none;font-variant-numeric:tabular-nums}
+.disc.light{color:#111}
 
 /* ---------- التقرير ---------- */
 .rstats{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}
@@ -237,6 +241,19 @@ header h1.dlbl .dicon svg{width:21px;height:21px}
 .rrow u{flex-basis:100%;text-decoration:none;font-size:12px;color:var(--mut);margin-top:3px}
 .aibox{border:1px solid var(--line);border-radius:12px;padding:15px 17px;font-size:15px;line-height:1.85}
 .raw2{color:var(--mut);font-size:11.5px;margin-top:12px;padding-top:10px;border-top:1px solid var(--line)}
+
+/* ---------- أرقامي القياسية ---------- */
+.muted{color:var(--mut)}
+.sm{font-size:13px}
+.badges{display:flex;gap:8px;overflow-x:auto;padding-bottom:6px;margin-bottom:8px;-webkit-overflow-scrolling:touch}
+.badge{flex:none;display:flex;flex-direction:column;align-items:center;gap:4px;width:66px;
+  border:1px solid var(--line);border-radius:12px;padding:10px 4px}
+.badge .bi{font-size:22px}
+.badge .bn{font-size:10.5px;color:var(--mut);text-align:center;line-height:1.3}
+.badge.locked{opacity:.32}
+.badge.locked .bi{filter:grayscale(1)}
+.prchart{padding:14px 15px;border-bottom:1px solid var(--line)}
+.prchart p{margin:6px 0 0}
 
 /* ---------- قياساتي ---------- */
 .chartbox{border:1px solid var(--line);border-radius:12px;padding:14px 16px 12px;margin-top:14px}

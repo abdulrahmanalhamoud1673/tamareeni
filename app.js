@@ -254,6 +254,20 @@ function plateText(total) {
   return `بار ${nP(r.bar)} + (${list}) لكل جهة`
        + (r.left > 0.01 ? ` — ناقص ${nP(r.left * 2)} كغم، أقرب وزن ${nP(total - r.left * 2)}` : '');
 }
+// ألوان الأقراص القياسية بالصالات (نفس ترميز الاتحاد الدولي تقريباً) — لكل وزن موجود بـPLATES
+const PLATE_COLOR = { 20: '#2563eb', 15: '#eab308', 10: '#16a34a', 5: '#e5e7eb', 2.5: '#18181b', 1.25: '#9ca3af' };
+const PLATE_LIGHT = new Set([5, 1.25]);   // أقراص فاتحة تحتاج نص غامق
+function plateVisual(total) {
+  const r = plateSplit(total);
+  if (r.err || !r.side.length) return '';
+  const discs = r.side.flatMap(([p, n]) => Array(n).fill(p));
+  const maxP = Math.max(...discs);
+  return `<div class="platerow">
+    ${discs.map(p => `<div class="disc${PLATE_LIGHT.has(p) ? ' light' : ''}"
+      style="height:${22 + (p / maxP) * 34}px;background:${PLATE_COLOR[p] || 'var(--mut)'}">${nP(p)}</div>`).join('')}
+  </div>`;
+}
+function plateOut(total) { return plateVisual(total) + `<div class="pout">${esc(plateText(total))}</div>`; }
 
 /* هل أنجز كل التكرارات المستهدفة آخر مرة؟ إذاً حان وقت الزيادة */
 function readyToAdd(id, day) {
@@ -341,9 +355,9 @@ let page = 'home';
 // إعادة الرسم تحافظ على موضعك في الصفحة. مرّر true فقط عند الانتقال لشاشة أخرى.
 function render(toTop) {
   const y = window.scrollY;
-  const OVERLAY = ['ask', 'report', 'body', 'food'];   // شاشات تُعرض حتى لو في تمرين شغّال
+  const OVERLAY = ['ask', 'report', 'body', 'food', 'records'];   // شاشات تُعرض حتى لو في تمرين شغّال
   const active = S.active && !OVERLAY.includes(page) ? 'workout' : page;
-  ({ home, workout, log, ask, report, body, food }[active])();
+  ({ home, workout, log, ask, report, body, food, records }[active])();
   renderTabs(active);
   window.scrollTo(0, toTop ? 0 : y);
 }
@@ -487,8 +501,8 @@ function exSection(i) {
         <div class="plates">
           <div class="prow"><span>الوزن الكلي</span>
             <input type="number" inputmode="decimal" id="barIn" value="${barVal || it.sets.find(s => !s.done)?.w || it.sets[0].w}"
-                   oninput="barVal=+this.value; $('#barOut').textContent=plateText(barVal)"></div>
-          <div class="pout" id="barOut">${esc(plateText(barVal || it.sets.find(s => !s.done)?.w || it.sets[0].w))}</div>
+                   oninput="barVal=+this.value; $('#barOut').innerHTML=plateOut(barVal)"></div>
+          <div id="barOut">${plateOut(barVal || it.sets.find(s => !s.done)?.w || it.sets[0].w)}</div>
         </div>` : '') : ''}
       <div class="exfoot"><button onclick="addSet(${i})">إضافة مجموعة</button>${
         note || noteOpen === it.ex ? '' : `<button onclick="startNote('${it.ex}')">إضافة ملاحظة</button>`}${
@@ -705,7 +719,11 @@ function report() {
   const rep = S.report;
 
   $('#app').innerHTML = `
-  <header><h1>📈 تقرير الأسبوع</h1><button class="link" onclick="go('home')">رجوع</button></header>
+  <header><h1>📈 تقرير الأسبوع</h1>
+    <div class="hlinks">
+      <button class="link" onclick="go('records')">🏆 أرقامي</button>
+      <button class="link" onclick="go('home')">رجوع</button>
+    </div></header>
 
   ${!S.sessions.length ? '<div class="empty">سجّل أول تمرين وبيبلّش التقرير يشتغل</div>' : `
   <div class="lbl">آخر ٧ أيام</div>
@@ -781,6 +799,78 @@ ${last || 'لا يوجد'}
 ثم "الأسبوع الجاي:" وسطرين إجراءات محددة بأرقام (مثلاً: زِد السكوات لـ ٢٥ كغم، أو أضف مجموعة رابعة لتمرين كذا) —
 خذ حالة التعافي بعين الاعتبار إذا فيها شيء مفيد (مثلاً يوم لسا متعب فعلاً، اقترح يبلّش بيوم ثاني جاهز أكتر).
 لا تتجاوز ١٤٠ كلمة إجمالاً.`;
+}
+
+/* ===== أرقامي القياسية ===== */
+// أفضل وزن سُجّل لهذا التمرين على الإطلاق (+ التاريخ وعدد التكرارات وقتها)
+function exBest(id) {
+  let best = null;
+  for (const s of S.sessions) {
+    const it = s.entries.find(e => e.ex === id);
+    if (!it || !it.sets.length) continue;
+    const max = Math.max(...it.sets.map(x => x.w || 0));
+    if (max <= 0 || (best && max <= best.max)) continue;
+    const reps = it.sets.filter(x => x.w === max).reduce((a, x) => a + (x.r || 0), 0);
+    best = { date: s.date, max, reps };
+  }
+  return best;
+}
+// رسم بياني صغير لتطوّر وزن تمرين معيّن عبر الوقت — نفس أسلوب weightChart تماماً
+function exChart(h) {
+  const W = 320, H = 70, P = 8;
+  const vals = h.map(x => x.max);
+  const mn = Math.min(...vals), mx = Math.max(...vals), rg = (mx - mn) || 1;
+  const x = i => h.length === 1 ? W / 2 : P + i * (W - P * 2) / (h.length - 1);
+  const y = v => H - P - ((v - mn) / rg) * (H - P * 2);
+  const d = vals.map((v, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(' ');
+  return `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" style="width:100%;height:${H}px;display:block">
+    <path d="${d}" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+    ${vals.map((v, i) => `<circle cx="${x(i).toFixed(1)}" cy="${y(v).toFixed(1)}" r="2.4" fill="currentColor"/>`).join('')}
+  </svg>`;
+}
+
+// شارات إنجاز بسيطة مبنية على أرقامك الفعلية — بلا أي تعقيد إضافي، بس محطات تستاهل احتفال
+const BADGES = [
+  { id: 'b1', icon: '🥉', name: 'البداية', need: s => s.sessions.length >= 1 },
+  { id: 'b2', icon: '🥈', name: 'مستمر', need: s => s.sessions.length >= 10 },
+  { id: 'b3', icon: '🥇', name: 'ملتزم', need: s => s.sessions.length >= 50 },
+  { id: 'b4', icon: '💯', name: 'المئة', need: s => s.sessions.length >= 100 },
+  { id: 'b5', icon: '🔥', name: 'شهر كامل', need: () => streakWeeks() >= 4 },
+  { id: 'b6', icon: '👑', name: 'نص سنة', need: () => streakWeeks() >= 26 },
+];
+
+let prOpen = null;   // معرّف التمرين المفتوح حالياً (رسمه البياني ظاهر)
+function records() {
+  const groups = Object.entries(PROGRAM).map(([k, prog]) => ({
+    k, name: prog.name,
+    items: prog.items.map(([id]) => ({ id, b: exBest(id) })).filter(x => x.b),
+  })).filter(g => g.items.length);
+
+  $('#app').innerHTML = `
+  <header><h1>🏆 أرقامي القياسية</h1><button class="link" onclick="go('report')">رجوع</button></header>
+
+  <div class="badges">
+    ${BADGES.map(b => {
+      const on = b.need(S);
+      return `<div class="badge${on ? '' : ' locked'}"><span class="bi">${b.icon}</span><span class="bn">${b.name}</span></div>`;
+    }).join('')}
+  </div>
+
+  ${!groups.length ? '<div class="empty">سجّل أول تمرين وبتبدأ أرقامك تتجمّع هون</div>' : groups.map(g => `
+  <div class="lbl"><span class="dicon" style="color:${DAY_ACC[g.k]};display:inline-flex;vertical-align:-5px">${DAY_ICON[g.k]}</span> ${g.name}</div>
+  <div class="rlist">
+    ${g.items.map(({ id, b }) => `
+      <div class="rrow" style="cursor:pointer" onclick="prOpen=prOpen==='${id}'?null:'${id}';render()">
+        <span>${esc(ex(id).ar)}</span>
+        <b class="acc">${n1(b.max)} كغم${b.reps ? ' · ' + b.reps + ' عدة' : ''}</b>
+      </div>
+      ${prOpen === id ? `<div class="prchart" style="color:${DAY_ACC[g.k]}">
+        ${exChart(exHistory(id).filter(x => x.max > 0))}
+        <p class="muted sm">أفضل رقم يوم ${fmt(b.date)}</p>
+      </div>` : ''}
+    `).join('')}
+  </div>`).join('')}
+  `;
 }
 
 /* ===== قياساتي وخطة التغذية ===== */
