@@ -181,6 +181,15 @@ header h1.dlbl .dicon svg{width:21px;height:21px}
 #track i{display:block;height:100%;background:var(--acc);transition:width 1s linear}
 
 /* ---------- السجل ---------- */
+.calbox{border:1px solid var(--line);border-radius:12px;padding:14px 12px;margin-bottom:24px}
+.calhead{text-align:center;font-size:13px;color:var(--mut);font-weight:600;margin-bottom:10px}
+.calwd{display:grid;grid-template-columns:repeat(7,1fr);text-align:center;font-size:11px;color:var(--mut);margin-bottom:4px}
+.calcells{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
+.cc{position:relative;aspect-ratio:1;min-width:0;display:flex;align-items:center;justify-content:center;
+  font-size:12.5px;font-variant-numeric:tabular-nums;color:var(--tx);border-radius:8px}
+.cc.empty{visibility:hidden}
+.cc.today{box-shadow:inset 0 0 0 1.5px var(--acc)}
+.cc i{position:absolute;bottom:4px;width:5px;height:5px;border-radius:50%;background:var(--dc,var(--mut));font-style:normal}
 .rec{border-bottom:1px solid var(--line);padding:16px 0}
 .rec:last-child{border-bottom:0}
 .recrow{display:flex;align-items:center;gap:10px}
@@ -199,12 +208,6 @@ header h1.dlbl .dicon svg{width:21px;height:21px}
 .foot{margin-top:40px;padding-top:20px;border-top:1px solid var(--line);
   display:flex;justify-content:space-between;gap:14px;color:var(--mut);font-size:14px}
 .foot button{background:none;border:0;color:var(--mut);font-size:14px;padding:0}
-.rowlink{display:flex;width:100%;justify-content:space-between;align-items:baseline;gap:14px;
-  background:none;border:1px solid var(--line);border-radius:12px;padding:16px 18px;
-  margin-top:26px;color:inherit;text-align:right;font-size:16px;font-weight:600}
-.rowlink i{font-style:normal;font-size:12.5px;color:var(--mut);font-weight:400}
-.rowlink:active{background:var(--soft)}
-.rl-label{display:flex;align-items:center;gap:8px}
 
 /* ---------- حاسبة أوزان البار ---------- */
 .plates{border:1px solid var(--line);border-radius:11px;padding:12px 14px;margin:4px 0 12px}

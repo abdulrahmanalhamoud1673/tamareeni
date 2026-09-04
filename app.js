@@ -394,26 +394,6 @@ function home() {
       </button>`;
     }).join('')}
   </div>
-
-  <button class="rowlink" onclick="go('report')">
-    <span class="rl-label">📈 تقرير الأسبوع</span>
-    <i>${S.sessions.length
-      ? plur(weekStats(7).days, 'تمرين واحد', 'تمرينان', 'تمارين', 'تمريناً') + ' آخر ٧ أيام'
-      : 'ابدأ لتشوفه'}</i>
-  </button>
-
-  <button class="rowlink" onclick="foodDay=null;go('food')">
-    <span class="rl-label">🍽️ الأكل اليوم</span>
-    <i>${todayMeals().length
-      ? nK(dayTotal(today()).calories) + ' سعرة'
-      : 'صوّر أول وجبة'}</i>
-  </button>
-
-  <button class="rowlink" onclick="go('body')">
-    <span class="rl-label">⚖️ قياساتي</span>
-    <i>${S.body.length ? n1(sortedBody().slice(-1)[0].weight) + ' كغم آخر قياس' : 'InBody جاهز'}</i>
-  </button>
-
   `;
 }
 
@@ -637,10 +617,39 @@ function delEntry(idx, k) {
   save(); render();
 }
 
+// شهر صغير يبيّن انتظامك بنظرة واحدة — نفس فكرة تقويم الالتزام بتطبيقات
+// مشهورة، بس بدل نقطة لون واحد بيستخدم لون اليوم نفسه فتعرف أي عضلة تمرّنت
+function miniCalendar() {
+  const now = new Date();
+  const y = now.getFullYear(), m = now.getMonth();
+  const startOffset = new Date(y, m, 1).getDay();
+  const daysInMonth = new Date(y, m + 1, 0).getDate();
+  const byDate = {};
+  S.sessions.forEach(s => { if (!byDate[s.date]) byDate[s.date] = s.day; });
+  const todayStr = today();
+  const WD = ['ح', 'ن', 'ث', 'ر', 'خ', 'ج', 'س'];
+  const cells = Array(startOffset).fill(null).concat(
+    Array.from({ length: daysInMonth }, (_, i) => {
+      const d = i + 1, ds = `${y}-${pad(m + 1)}-${pad(d)}`;
+      return { d, ds, day: byDate[ds], isToday: ds === todayStr };
+    })
+  );
+  return `<div class="calbox">
+    <div class="calhead">${MONTHS[m]} ${y}</div>
+    <div class="calwd">${WD.map(w => `<span>${w}</span>`).join('')}</div>
+    <div class="calcells">
+      ${cells.map(c => !c ? `<span class="cc empty"></span>`
+        : `<span class="cc${c.isToday ? ' today' : ''}" style="${c.day ? `--dc:${DAY_ACC[c.day]}` : ''}">${c.d}${c.day ? '<i></i>' : ''}</span>`
+      ).join('')}
+    </div>
+  </div>`;
+}
+
 function log() {
   const list = S.sessions.slice().reverse();
   $('#app').innerHTML = `
   <header><h1>📅 السجل</h1><button class="link" onclick="go('home')">رجوع</button></header>
+  ${S.sessions.length ? miniCalendar() : ''}
   ${list.length ? list.map((s, i) => `
     <div class="rec">
       <div class="recrow">
