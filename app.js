@@ -375,15 +375,21 @@ const go = p => { page = p; render(true); };
 // شريط التنقل السفلي — يُبنى مرة وحدة من TABS، ثم كل رسمة بس تبدّل حالة "نشط"
 function buildTabbar() {
   const bar = $('#tabbar');
-  bar.innerHTML = TABS.map(([p, icon, label]) => {
+  bar.style.setProperty('--n', TABS.length);
+  // .tabind = المؤشّر المتوهّج اللي بينزلق لتحت التبويب النشط
+  bar.innerHTML = '<span class="tabind"></span>' + TABS.map(([p, icon, label]) => {
     const reset = p === 'food' ? 'foodDay=null;' : p === 'ask' ? 'askEx=null;' : '';
-    return `<button data-p="${p}" onclick="${reset}go('${p}')"><span class="ti">${icon}</span><span class="tl">${label}</span></button>`;
+    return `<button data-p="${p}" onclick="buzz(8);${reset}go('${p}')"><span class="ti">${icon}</span><span class="tl">${label}</span></button>`;
   }).join('');
 }
-// مخفي أثناء التمرين فقط (شاشة مركّزة بلا تشتيت)
+// مخفي أثناء التمرين فقط (شاشة مركّزة بلا تشتيت). بصفحة مش من التبويبات (السجل،
+// الأرقام القياسية) المؤشّر بيختفي بهدوء، وبيرجع ينزلق من مكانه الأخير لما ترجع لتبويب.
 function renderTabs(active) {
   const bar = $('#tabbar');
   bar.classList.toggle('hide', active === 'workout');
+  const i = TABS.findIndex(t => t[0] === active);
+  bar.classList.toggle('none', i < 0);
+  if (i >= 0) bar.style.setProperty('--i', i);
   bar.querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.p === active));
 }
 
