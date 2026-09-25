@@ -174,7 +174,7 @@ const today = () => { const d = new Date(); return `${d.getFullYear()}-${pad(d.g
 const MONTHS = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
 const fmt = k => { const d = new Date(k + 'T12:00:00'); return `${d.getDate()} ${MONTHS[d.getMonth()]}`; };
 const since = k => Math.round((new Date(today() + 'T12:00:00') - new Date(k + 'T12:00:00')) / 864e5);
-const ago = k => { const n = since(k); return n === 0 ? 'اليوم' : n === 1 ? 'أمس' : `قبل ${n} يوم`; };
+const ago = k => { const n = since(k); return n === 0 ? 'اليوم' : n === 1 ? 'أمس' : `قبل ${plur(n, 'يوم', 'يومين', 'أيام', 'يوماً')}`; };
 
 // بداية الأسبوع (الإثنين) للتاريخ المعطى، كسلسلة YYYY-MM-DD
 const weekStart = k => {
@@ -366,9 +366,14 @@ function render(toTop) {
   const y = window.scrollY;
   const OVERLAY = ['ask', 'report', 'body', 'food', 'records'];   // شاشات تُعرض حتى لو في تمرين شغّال
   const active = S.active && !OVERLAY.includes(page) ? 'workout' : page;
+  const app = $('#app');
   ({ home, workout, log, ask, report, body, food, records }[active])();
   renderTabs(active);
   window.scrollTo(0, toTop ? 0 : y);
+  // حركة دخول خفيفة عند الانتقال لشاشة جديدة فقط — مش مع كل تحديث داخلي
+  // (تحديث وزن أو ✓) حتى ما تصير مزعجة وإنت بتسجّل مجموعاتك.
+  if (toTop) { app.classList.remove('in'); void app.offsetWidth; app.classList.add('in'); }
+  document.body.classList.toggle('scrolled', window.scrollY > 4);
 }
 const go = p => { page = p; render(true); };
 
@@ -414,13 +419,28 @@ function home() {
     ${keys.map(k => {
       const l = done.filter(s => s.day === k).pop();
       const r = l && recoveryInfo(k);
-      const rTxt = !r ? '' : r.ready ? ' · جاهز'
-        : ` · يحتاج ${r.remainH < 24 ? r.remainH + ' سا' : plur(Math.round(r.remainH / 24), 'يوم', 'يومين', 'أيام', 'يوماً')}`;
-      const rColor = !r ? '' : r.ready ? 'var(--good)' : 'var(--warn)';
-      return `<button class="day" style="--dc:${DAY_ACC[k]}" onclick="start('${k}')">
-        <b class="dlbl"><span class="dicon" style="color:${DAY_ACC[k]}">${DAY_ICON[k]}</span>${PROGRAM[k].name}</b>
-        <span>${l ? ago(l.date) : k === next ? 'ابدأ من هنا' : '—'}${rTxt ? `<b style="color:${rColor};font-weight:600">${rTxt}</b>` : ''}</span>
+      const chip = !l ? '<span class="chip start">ابدأ</span>'
+        : r.ready ? '<span class="chip ok">جاهز</span>'
+        : `<span class="chip wait">يحتاج ${r.remainH < 24 ? r.remainH + ' سا' : plur(Math.round(r.remainH / 24), 'يوم', 'يومين', 'أيام', 'يوماً')}</span>`;
+      return `<button class="day${k === next ? ' next' : ''}" style="--dc:${DAY_ACC[k]}" onclick="buzz(8);start('${k}')">
+        <span class="dayl">
+          <span class="dbadge" style="color:${DAY_ACC[k]}">${DAY_ICON[k]}</span>
+          <span class="daytxt"><b>${PROGRAM[k].name}</b>
+            <em>${l ? ago(l.date) : 'ما جرّبته بعد'}${k === next ? ' · التالي بالبرنامج' : ''}</em></span>
+        </span>
+        ${chip}
       </button>`;
+    }).join('')}
+  </div>
+
+  <div class="lbl">آخر ٧ أيام</div>
+  <div class="week">
+    ${Array.from({ length: 7 }, (_, n) => {
+      const dt = new Date(); dt.setDate(dt.getDate() - (6 - n));
+      const ds = `${dt.getFullYear()}-${pad(dt.getMonth() + 1)}-${pad(dt.getDate())}`;
+      const s = done.find(x => x.date === ds);
+      return `<div class="wd${s ? ' on' : ''}${ds === today() ? ' now' : ''}" style="--dc:${s ? DAY_ACC[s.day] : 'var(--line)'}">
+        <i></i><span>${['أحد','اثنين','ثلاثا','أربعا','خميس','جمعة','سبت'][dt.getDay()]}</span></div>`;
     }).join('')}
   </div>
   `;
@@ -443,9 +463,13 @@ function start(k) {
 
 function workout() {
   const a = S.active;
+  // تقدّم الجلسة: كم مجموعة خلّصت من كم — يظهر بالترويسة وبشريط رفيع تحتها
+  const allSets = a.entries.reduce((n, e) => n + e.sets.length, 0);
+  const doneSets = a.entries.reduce((n, e) => n + e.sets.filter(s => s.done).length, 0);
   $('#app').innerHTML = `
   <header>
-    <div><h1 class="dlbl" style="color:${DAY_ACC[a.day] || 'var(--tx)'}"><span class="dicon">${DAY_ICON[a.day] || ''}</span>${PROGRAM[a.day].name}</h1><div class="sub" id="clock">0:00</div></div>
+    <div><h1 class="dlbl" style="color:${DAY_ACC[a.day] || 'var(--tx)'}"><span class="dicon">${DAY_ICON[a.day] || ''}</span>${PROGRAM[a.day].name}</h1>
+      <div class="sub"><span id="clock">0:00</span> · ${doneSets} من ${allSets} مجموعة</div></div>
     <div class="hlinks">
       <button class="link iconbtn" onclick="cancel()" aria-label="رجوع — إلغاء بلا حفظ">
         <svg viewBox="0 0 24 24" ${ICON_S}><path d="M6 6l12 12M18 6L6 18"/></svg>
@@ -453,11 +477,14 @@ function workout() {
       <button class="link" onclick="finish()">إنهاء</button>
     </div>
   </header>
+  <div class="wprog" style="--dc:${DAY_ACC[a.day] || 'var(--acc)'}"><i style="width:${allSets ? doneSets / allSets * 100 : 0}%"></i></div>
 
+  <div class="wbody" style="--dc:${DAY_ACC[a.day] || 'var(--acc)'}">
   ${groupSS(a.entries).map(g =>
-    g.ss ? `<div class="ssgroup" style="--dc:${DAY_ACC[a.day]}"><div class="sslabel">${g.idx.length > 1
+    g.ss ? `<div class="ssgroup"><div class="sslabel">${g.idx.length > 1
               ? 'سوبرست — بدون راحة بين التمرينين' : 'سوبرست'}</div>${g.idx.map(exSection).join('')}</div>`
          : exSection(g.idx[0])).join('')}
+  </div>
 
   <button class="btn" onclick="finish()">إنهاء التمرين</button>
   <button class="btn quiet" onclick="cancel()">إلغاء</button>`;
@@ -744,8 +771,9 @@ function report() {
   ${!S.sessions.length ? '<div class="empty">سجّل أول تمرين وبيبلّش التقرير يشتغل</div>' : `
   <div class="lbl">آخر ٧ أيام</div>
   <div class="rstats" style="grid-template-columns:repeat(2,1fr)">
-    <div><b>${w.days}</b><i>${w.days === 1 ? 'تمرين' : w.days <= 10 ? 'تمارين' : 'تمريناً'}</i>${daysDelta ? `<u class="${daysDelta > 0 ? 'pos' : ''}">${daysDelta > 0 ? '+' : ''}${daysDelta} عن الأسبوع اللي قبله</u>` : ''}</div>
-    <div><b>${w.sets}</b><i>${w.sets === 1 ? 'مجموعة' : w.sets <= 10 ? 'مجموعات' : 'مجموعة'}</i></div>
+    <div><b>${w.days}</b><i>${w.days === 1 ? 'تمرين' : w.days === 2 ? 'تمرينان' : w.days <= 10 ? 'تمارين' : 'تمريناً'}</i>${
+      daysDelta ? `<u class="${daysDelta > 0 ? 'pos' : ''}">${daysDelta > 0 ? 'أكثر' : 'أقل'} بـ${Math.abs(daysDelta)} عن الأسبوع اللي قبله</u>` : ''}</div>
+    <div><b>${w.sets}</b><i>${w.sets === 1 ? 'مجموعة' : w.sets === 2 ? 'مجموعتان' : w.sets <= 10 ? 'مجموعات' : 'مجموعة'}</i></div>
   </div>
 
   ${ch.up.length ? `<div class="lbl">⬆️ تطوّرت</div>
@@ -1171,11 +1199,15 @@ function delMeal(date, idx) {
 function ringSVG(pct) {
   const r = 42, c = Math.round(2 * Math.PI * r);
   const off = Math.round(c * (1 - Math.min(1, pct / 100)));
-  const color = pct > 100 ? 'var(--warn)' : 'var(--food)';
+  // تدرّج لوني بدل لون مسطّح — أخضر/فيروزي وأنت تحت الهدف، كهرماني لما تتجاوزه
+  const [a, b] = pct > 100 ? ['var(--warn)', 'var(--d1)'] : ['var(--food)', 'var(--acc)'];
   return `<svg viewBox="0 0 100 100" class="calring">
+    <defs><linearGradient id="ringg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="${a}"/><stop offset="1" stop-color="${b}"/></linearGradient></defs>
     <circle cx="50" cy="50" r="${r}" fill="none" stroke="var(--line)" stroke-width="9"/>
-    <circle cx="50" cy="50" r="${r}" fill="none" stroke="${color}" stroke-width="9" stroke-linecap="round"
-      stroke-dasharray="${c}" stroke-dashoffset="${off}" transform="rotate(-90 50 50)"/>
+    <circle cx="50" cy="50" r="${r}" fill="none" stroke="url(#ringg)" stroke-width="9" stroke-linecap="round"
+      stroke-dasharray="${c}" stroke-dashoffset="${off}" transform="rotate(-90 50 50)"
+      style="transition:stroke-dashoffset .6s cubic-bezier(.4,1.2,.5,1)"/>
   </svg>`;
 }
 
@@ -1230,7 +1262,8 @@ function food() {
   <div class="meallist">
     ${list.slice().reverse().map((m, i) => `
       <div class="mealcard">
-        <img src="${m.img}" alt="">
+        ${m.img ? `<img src="${m.img}" alt="" onerror="const d=document.createElement('div');d.className='mealph';this.replaceWith(d)">`
+                : '<div class="mealph"></div>'}
         <div class="mealinfo">
           <b>${esc(m.label)}</b>
           <span>${nK(m.calories)} سعرة · ${m.protein}غ بروتين · ${m.carbs}غ كارب · ${m.fat}غ دهون</span>
@@ -1541,6 +1574,8 @@ async function gemini(parts, history, opts) {
 seedInBody();
 buildTabbar();
 render();
+// خط فاصل يظهر تحت الترويسة اللاصقة فقط لما تنزل بالصفحة
+addEventListener('scroll', () => document.body.classList.toggle('scrolled', window.scrollY > 4), { passive: true });
 // المتصفح بشكل افتراضي بيفحص وجود نسخة جديدة من sw.js كل ٢٤ ساعة تقريباً بس —
 // حتى لو المستخدم سكّر التطبيق وفتحه ألف مرة. نفرض فحصاً فورياً كل ما يفتح الصفحة،
 // وإذا وصل تحديث ونحن مش وسط تمرين، نعيد التحميل تلقائياً حتى يشتغل الكود الجديد فوراً.

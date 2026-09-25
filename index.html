@@ -20,6 +20,9 @@
   --food:#0d9488;                          /* لون ميزة الأكل */
   --d1:#dc2626; --d2:#7c3aed; --d3:#d97706; --d4:#16a34a;  /* لون كل يوم تمرين */
   --vio:#7c3aed; --navbg:rgba(255,255,255,.8); --navon:var(--acc);  /* الشريط السفلي العائم */
+  --r:16px;                                     /* انحناء موحّد لكل البطاقات */
+  --card:#ffffff;                               /* خلفية البطاقة */
+  --sh:0 1px 2px rgba(16,24,40,.04), 0 10px 26px -20px rgba(16,24,40,.35);   /* ظل ناعم */
 }
 @media (prefers-color-scheme: dark){
   :root{ --bg:#0d0d0d; --tx:#f2f2f2; --mut:#8c8c8c; --line:#232323; --soft:#171717;
@@ -27,6 +30,7 @@
     --good:#4ade80; --warn:#fbbf24; --food:#2dd4bf;
     --d1:#f87171; --d2:#a78bfa; --d3:#fbbf24; --d4:#4ade80;
     --vio:#a78bfa; --navbg:rgba(22,22,30,.78); --navon:#ffffff;
+    --card:#141418; --sh:0 1px 0 rgba(255,255,255,.03) inset, 0 12px 30px -24px #000;
   }
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -41,11 +45,19 @@ button{cursor:pointer}
 
 #app{max-width:560px;margin:0 auto;padding:0 20px 136px}
 
-/* ---------- الترويسة ---------- */
+/* حركة دخول خفيفة لكل شاشة جديدة */
+@keyframes pageIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+#app.in{animation:pageIn .3s cubic-bezier(.22,.9,.3,1) both}
+
+/* ---------- الترويسة: لاصقة بأعلى الشاشة بخلفية زجاجية ---------- */
 header{
   display:flex;align-items:center;justify-content:space-between;gap:12px;
-  padding:calc(18px + env(safe-area-inset-top)) 0 18px;
-}
+  padding:calc(18px + env(safe-area-inset-top)) 0 16px;
+  position:sticky;top:0;z-index:12;margin:0 -20px;padding-inline:20px;
+  background:color-mix(in srgb, var(--bg) 84%, transparent);
+  -webkit-backdrop-filter:blur(14px) saturate(1.4);backdrop-filter:blur(14px) saturate(1.4);
+  border-bottom:1px solid transparent;transition:border-color .25s}
+body.scrolled header{border-bottom-color:var(--line)}
 header h1{font-size:20px;font-weight:600;margin:0;letter-spacing:-.2px}
 header .sub{color:var(--mut);font-size:14px;font-variant-numeric:tabular-nums}
 header .sub.streak{color:var(--acc);font-weight:600;margin-top:2px}
@@ -93,14 +105,39 @@ header .sub.streak{color:var(--acc);font-weight:600;margin-top:2px}
 .lbl{color:var(--mut);font-size:13px;letter-spacing:.02em;margin:26px 0 10px}
 .daylist{display:flex;flex-direction:column;gap:10px}
 .day{
-  display:flex;align-items:center;justify-content:space-between;gap:14px;
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
   width:100%;text-align:right;color:inherit;
-  background:color-mix(in srgb, var(--dc, transparent) 6%, var(--bg));
-  border:1px solid var(--line);border-inline-start:4px solid var(--dc,var(--line));border-radius:12px;padding:18px 18px;
+  background:color-mix(in srgb, var(--dc, transparent) 5%, var(--card));
+  border:1px solid var(--line);border-inline-start:4px solid var(--dc,var(--line));
+  border-radius:var(--r);padding:14px 16px;box-shadow:var(--sh);
+  transition:transform .18s ease, box-shadow .18s ease;
 }
-.day:active{background:var(--soft)}
-.day b{font-size:18px;font-weight:600}
-.day span{color:var(--mut);font-size:13px;white-space:nowrap;font-variant-numeric:tabular-nums}
+.day:active{transform:scale(.985);box-shadow:none}
+.day.next{border-color:color-mix(in srgb,var(--dc) 45%,var(--line))}
+.dayl{display:flex;align-items:center;gap:12px;min-width:0}
+.dbadge{width:40px;height:40px;flex:none;border-radius:13px;display:grid;place-items:center;
+  background:color-mix(in srgb,currentColor 13%,transparent)}
+.dbadge svg{width:22px;height:22px;display:block}
+.daytxt{display:flex;flex-direction:column;gap:2px;min-width:0}
+.daytxt b{font-size:16.5px;font-weight:650;line-height:1.35}
+.daytxt em{font-style:normal;font-size:12px;color:var(--mut);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chip{flex:none;font-size:11.5px;font-weight:700;padding:5px 11px;border-radius:99px;white-space:nowrap;
+  font-variant-numeric:tabular-nums}
+.chip.ok{color:var(--good);background:color-mix(in srgb,var(--good) 15%,transparent)}
+.chip.wait{color:var(--warn);background:color-mix(in srgb,var(--warn) 15%,transparent)}
+.chip.start{color:var(--acc);background:color-mix(in srgb,var(--acc) 15%,transparent)}
+
+/* شريط آخر ٧ أيام: نقطة بلون تمرين ذاك اليوم */
+.week{display:flex;gap:6px}
+.week .wd{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;
+  border:1px solid var(--line);border-radius:13px;padding:11px 2px;background:var(--card)}
+.week .wd i{width:9px;height:9px;border-radius:50%;background:var(--line)}
+.week .wd span{font-size:9.5px;color:var(--mut)}
+.week .wd.on{border-color:color-mix(in srgb,var(--dc) 40%,var(--line));
+  background:color-mix(in srgb,var(--dc) 8%,var(--card))}
+.week .wd.on i{background:var(--dc);box-shadow:0 0 10px -1px var(--dc)}
+.week .wd.now{box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--acc) 45%,transparent)}
+.week .wd.now span{color:var(--tx);font-weight:700}
 
 /* أيقونة اليوم/التمرين المصمّمة (بار حديد بوضعية كل يوم) — لا إيموجي */
 .dlbl{display:flex;align-items:center;gap:10px}
@@ -108,6 +145,11 @@ header .sub.streak{color:var(--acc);font-weight:600;margin-top:2px}
 .dicon svg{width:23px;height:23px;display:block}
 header h1.dlbl{gap:9px}
 header h1.dlbl .dicon svg{width:21px;height:21px}
+
+/* شريط تقدّم الجلسة تحت ترويسة التمرين */
+.wprog{height:3px;border-radius:99px;background:var(--line);overflow:hidden;margin:2px 0 6px}
+.wprog i{display:block;height:100%;border-radius:99px;background:var(--dc,var(--acc));
+  transition:width .45s cubic-bezier(.3,1.2,.5,1)}
 
 /* ---------- التمرين ---------- */
 .ex{padding:24px 0;border-bottom:1px solid var(--line)}
@@ -158,23 +200,44 @@ header h1.dlbl .dicon svg{width:21px;height:21px}
   font-size:17px;font-weight:600;padding:11px 0;font-variant-numeric:tabular-nums;-moz-appearance:textfield}
 .num input::-webkit-inner-spin-button,.num input::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
 .num.flat{justify-content:center;color:var(--mut);font-size:14px;padding:11px 0}
-.tick{height:46px;border:1px solid var(--line);border-radius:10px;background:none;font-size:17px;color:var(--mut)}
-.tick.on{background:var(--acc);border-color:var(--acc);color:var(--acc-fg)}
+.tick{height:46px;border:1px solid var(--line);border-radius:12px;background:none;font-size:17px;color:var(--mut);
+  transition:background .18s ease, border-color .18s ease, transform .18s ease}
+.tick:active{transform:scale(.92)}
+/* علامة الصح تاخذ لون يوم التمرين نفسه */
+.tick.on{background:var(--dc,var(--acc));border-color:var(--dc,var(--acc));color:#fff}
 .exfoot{margin-top:4px}
 .exfoot button{background:none;border:0;color:var(--mut);font-size:14px;padding:6px 12px 6px 0}
 
 /* ---------- أزرار ---------- */
-.btn{display:block;width:100%;background:var(--acc);color:var(--acc-fg);border:0;
-  border-radius:12px;padding:17px;font-size:17px;font-weight:600;margin-top:28px}
-.btn.quiet{background:none;color:var(--mut);border:1px solid var(--line);font-weight:400;margin-top:12px}
-.btn:active{opacity:.75}
+.btn{display:block;width:100%;color:var(--acc-fg);border:0;
+  background:linear-gradient(135deg,var(--acc),color-mix(in srgb,var(--vio) 60%,var(--acc)));
+  box-shadow:0 10px 24px -12px color-mix(in srgb,var(--acc) 85%,transparent);
+  border-radius:14px;padding:17px;font-size:17px;font-weight:650;margin-top:28px;
+  transition:transform .15s ease, box-shadow .15s ease, opacity .15s ease}
+.btn.quiet{background:none;color:var(--mut);border:1px solid var(--line);font-weight:400;margin-top:12px;box-shadow:none}
+.btn:active{transform:translateY(1px) scale(.99);box-shadow:0 4px 12px -8px color-mix(in srgb,var(--acc) 80%,transparent)}
+/* الأزرار المعطّلة بهذا التطبيق كلها أزرار "شغّال الآن" — فتاخذ دوّارة انتظار */
+.btn[disabled]{opacity:.7;box-shadow:none;display:flex;align-items:center;justify-content:center;gap:10px}
+.btn[disabled]::after{content:'';width:15px;height:15px;border-radius:50%;flex:none;
+  border:2px solid color-mix(in srgb,currentColor 35%,transparent);border-top-color:currentColor;
+  animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
 .photobtns{display:flex;gap:10px;margin-top:28px}
 .photobtns .btn{flex:1;width:auto;margin-top:0}
 
 /* ---------- مؤقت الراحة ---------- */
-#rest{position:fixed;left:0;right:0;bottom:0;z-index:20;transform:translateY(105%);transition:transform .22s ease;
-  background:var(--bg);border-top:1px solid var(--line);padding:16px 20px calc(16px + env(safe-area-inset-bottom))}
-#rest.show{transform:none}
+/* نفس لغة الشريط السفلي: بطاقة عائمة زجاجية */
+#rest{position:fixed;z-index:20;left:50%;bottom:calc(10px + env(safe-area-inset-bottom));
+  width:calc(100% - 24px);max-width:520px;border-radius:22px;padding:14px 16px;
+  background:var(--navbg);-webkit-backdrop-filter:blur(18px) saturate(1.5);backdrop-filter:blur(18px) saturate(1.5);
+  box-shadow:0 12px 32px -10px color-mix(in srgb,var(--acc) 45%,transparent),0 2px 10px rgba(0,0,0,.14);
+  transform:translate(-50%,calc(100% + 24px));transition:transform .3s cubic-bezier(.3,1.2,.5,1)}
+#rest.show{transform:translate(-50%,0)}
+#rest::before{content:'';position:absolute;inset:0;border-radius:inherit;padding:1px;pointer-events:none;opacity:.55;
+  background:linear-gradient(120deg,color-mix(in srgb,var(--acc) 75%,transparent),
+    color-mix(in srgb,var(--vio) 60%,transparent) 50%,color-mix(in srgb,var(--acc) 75%,transparent));
+  -webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);
+  -webkit-mask-composite:xor;mask-composite:exclude}
 #rest .in{max-width:560px;margin:0 auto;display:flex;align-items:center;gap:16px}
 #rest .t{font-size:26px;font-weight:600;font-variant-numeric:tabular-nums;min-width:74px}
 #rest .c{color:var(--mut);font-size:14px;flex:1}
@@ -183,7 +246,7 @@ header h1.dlbl .dicon svg{width:21px;height:21px}
 #track i{display:block;height:100%;background:var(--acc);transition:width 1s linear}
 
 /* ---------- السجل ---------- */
-.calbox{border:1px solid var(--line);border-radius:12px;padding:14px 12px;margin-bottom:24px}
+.calbox{border:1px solid var(--line);border-radius:var(--r);padding:14px 12px;margin-bottom:24px;background:var(--card);box-shadow:var(--sh)}
 .calhead{text-align:center;font-size:13px;color:var(--mut);font-weight:600;margin-bottom:10px}
 .calwd{display:grid;grid-template-columns:repeat(7,1fr);text-align:center;font-size:11px;color:var(--mut);margin-bottom:4px}
 .calcells{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
@@ -212,7 +275,7 @@ header h1.dlbl .dicon svg{width:21px;height:21px}
 .foot button{background:none;border:0;color:var(--mut);font-size:14px;padding:0}
 
 /* ---------- حاسبة أوزان البار ---------- */
-.plates{border:1px solid var(--line);border-radius:11px;padding:12px 14px;margin:4px 0 12px}
+.plates{border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin:4px 0 12px;background:var(--card)}
 .prow{display:flex;justify-content:space-between;align-items:center;gap:12px}
 .prow span{color:var(--mut);font-size:13px}
 .prow input{width:96px;background:var(--soft);border:1px solid var(--line);border-radius:9px;
@@ -225,12 +288,12 @@ header h1.dlbl .dicon svg{width:21px;height:21px}
 
 /* ---------- التقرير ---------- */
 .rstats{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}
-.rstats div{border:1px solid var(--line);border-radius:12px;padding:14px 6px;text-align:center}
+.rstats div{border:1px solid var(--line);border-radius:var(--r);padding:15px 6px;text-align:center;background:var(--card);box-shadow:var(--sh)}
 .rstats b{display:block;font-size:26px;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
 .rstats i{font-style:normal;font-size:11.5px;color:var(--mut)}
 .rstats u{display:block;text-decoration:none;font-size:11px;color:var(--mut);margin-top:4px;direction:rtl}
 .rstats u.pos{color:var(--good);font-weight:600}
-.rlist{border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.rlist{border:1px solid var(--line);border-radius:var(--r);overflow:hidden;background:var(--card);box-shadow:var(--sh)}
 .rrow{display:flex;justify-content:space-between;align-items:baseline;gap:12px;
   padding:12px 15px;border-bottom:1px solid var(--line);font-size:15px}
 .rrow:last-child{border-bottom:0}
@@ -241,7 +304,7 @@ header h1.dlbl .dicon svg{width:21px;height:21px}
 .rrow b.acc{color:var(--acc);font-weight:700}
 .rrow.proj{flex-wrap:wrap}
 .rrow u{flex-basis:100%;text-decoration:none;font-size:12px;color:var(--mut);margin-top:3px}
-.aibox{border:1px solid var(--line);border-radius:12px;padding:15px 17px;font-size:15px;line-height:1.85}
+.aibox{border:1px solid var(--line);border-radius:var(--r);padding:15px 17px;font-size:15px;line-height:1.85;background:var(--card);box-shadow:var(--sh)}
 .raw2{color:var(--mut);font-size:11.5px;margin-top:12px;padding-top:10px;border-top:1px solid var(--line)}
 
 /* ---------- أرقامي القياسية ---------- */
@@ -249,7 +312,7 @@ header h1.dlbl .dicon svg{width:21px;height:21px}
 .sm{font-size:13px}
 .badges{display:flex;gap:8px;overflow-x:auto;padding-bottom:6px;margin-bottom:8px;-webkit-overflow-scrolling:touch}
 .badge{flex:none;display:flex;flex-direction:column;align-items:center;gap:4px;width:66px;
-  border:1px solid var(--line);border-radius:12px;padding:10px 4px}
+  border:1px solid var(--line);border-radius:14px;padding:10px 4px;background:var(--card)}
 .badge .bi{font-size:22px}
 .badge .bn{font-size:10.5px;color:var(--mut);text-align:center;line-height:1.3}
 .badge.locked{opacity:.32}
@@ -258,9 +321,9 @@ header h1.dlbl .dicon svg{width:21px;height:21px}
 .prchart p{margin:6px 0 0}
 
 /* ---------- قياساتي ---------- */
-.chartbox{border:1px solid var(--line);border-radius:12px;padding:14px 16px 12px;margin-top:14px}
+.chartbox{border:1px solid var(--line);border-radius:var(--r);padding:14px 16px 12px;margin-top:14px;background:var(--card);box-shadow:var(--sh)}
 .chartrange{display:flex;justify-content:space-between;font-size:11.5px;color:var(--mut);margin-top:8px;direction:ltr}
-.histbox{border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+.histbox{border:1px solid var(--line);border-radius:var(--r);padding:14px 16px;background:var(--card);box-shadow:var(--sh)}
 .seqrow{color:var(--mut);font-size:13.5px;font-variant-numeric:tabular-nums;direction:rtl;margin-bottom:11px;line-height:1.6}
 .seqrow:last-child{margin-bottom:0}
 .seqrow em{font-style:normal;display:block;margin-bottom:3px;color:var(--tx);font-weight:600;font-size:12.5px}
@@ -272,8 +335,11 @@ header h1.dlbl .dicon svg{width:21px;height:21px}
 .calnum b{display:block;font-size:30px;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
 .calnum i{font-style:normal;font-size:11.5px;color:var(--mut)}
 .meallist{display:flex;flex-direction:column;gap:10px}
-.mealcard{display:flex;align-items:center;gap:12px;border:1px solid var(--line);border-radius:12px;padding:10px}
-.mealcard img{width:56px;height:56px;border-radius:9px;object-fit:cover;flex:none;background:var(--soft)}
+.mealcard{display:flex;align-items:center;gap:12px;border:1px solid var(--line);border-radius:var(--r);padding:10px;background:var(--card);box-shadow:var(--sh)}
+.mealcard img{width:56px;height:56px;border-radius:11px;object-fit:cover;flex:none;background:var(--soft)}
+/* بديل الصورة لو ما انحفظت أو تعطّلت — بدل أيقونة الصورة المكسورة */
+.mealph{width:56px;height:56px;border-radius:11px;flex:none;background:
+  radial-gradient(circle at 50% 42%, color-mix(in srgb,var(--food) 30%,transparent), transparent 62%), var(--soft)}
 .mealinfo{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
 .mealinfo b{font-size:15px;font-weight:600}
 .mealinfo span{font-size:12.5px;color:var(--mut)}
@@ -288,8 +354,9 @@ header h1.dlbl .dicon svg{width:21px;height:21px}
 .recmain .dicon svg{width:18px;height:18px}
 
 #msg{position:fixed;left:50%;transform:translate(-50%,14px);bottom:calc(100px + env(safe-area-inset-bottom));z-index:40;opacity:0;
-  background:var(--tx);color:var(--bg);padding:11px 20px;border-radius:10px;font-size:15px;font-weight:600;
-  transition:.2s;pointer-events:none;max-width:88vw;text-align:center}
+  background:var(--tx);color:var(--bg);padding:11px 20px;border-radius:99px;font-size:15px;font-weight:650;
+  box-shadow:0 12px 28px -12px rgba(0,0,0,.5);
+  transition:.22s cubic-bezier(.3,1.3,.5,1);pointer-events:none;max-width:88vw;text-align:center}
 #msg.show{opacity:1;transform:translate(-50%,0)}
 #msg.pr{background:var(--acc);color:var(--acc-fg)}
 
