@@ -126,6 +126,18 @@ const TABS = [
   ['ask', `<svg viewBox="0 0 24 24" ${ICON_S}><path d="M3.5 12c0-4.4 3.8-7.8 8.5-7.8s8.5 3.4 8.5 7.8-3.8 7.8-8.5 7.8c-1.1 0-2.2-.2-3.2-.6L4.5 21l1-4.1C4.2 15.6 3.5 13.9 3.5 12z"/><circle cx="8.7" cy="12" r=".9" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r=".9" fill="currentColor" stroke="none"/><circle cx="15.3" cy="12" r=".9" fill="currentColor" stroke="none"/></svg>`, 'اسأل'],
 ];
 
+// أيقونات ترويسات الصفحات — نفس عائلة الأيقونات المرسومة، بدل إيموجي جاهز
+const ICON = {
+  home: TABS[0][1], food: TABS[1][1], body: TABS[2][1], report: TABS[3][1], ask: TABS[4][1],
+  log: `<svg viewBox="0 0 24 24" ${ICON_S}><rect x="3.5" y="5" width="17" height="15.5" rx="3"/><path d="M8 3v4M16 3v4M3.5 10h17"/><circle cx="8.5" cy="14" r=".9" fill="currentColor" stroke="none"/><circle cx="12" cy="14" r=".9" fill="currentColor" stroke="none"/><circle cx="15.5" cy="14" r=".9" fill="currentColor" stroke="none"/></svg>`,
+  records: `<svg viewBox="0 0 24 24" ${ICON_S}><path d="M7.5 4h9v5.2a4.5 4.5 0 0 1-9 0z"/><path d="M7.5 5.6H5.2a2.6 2.6 0 0 0 2.5 4.2"/><path d="M16.5 5.6h2.3a2.6 2.6 0 0 1-2.5 4.2"/><path d="M12 13.7V17M9.5 20h5M10.5 17h3"/></svg>`,
+};
+// ترويسة موحّدة لكل الصفحات: أيقونة ملوّنة + عنوان + سطر فرعي اختياري + أزرار
+const head = (key, title, right, sub) => `<header>
+  <div class="htitle"><span class="hicon ${key}">${ICON[key]}</span>
+    <div><h1>${title}</h1>${sub ? `<div class="sub">${sub}</div>` : ''}</div></div>
+  ${right || ''}</header>`;
+
 // ثابتان بدل إعدادات: مدة راحة موصى فيها لبرنامج تضخيم عضلي مختلط
 // (مركّبة + معزولة) — ٩٠ ثانية الوسط الذهبي اللي بتتفق عليه أغلب المصادر.
 // ووزن البار الأولمبي القياسي بأغلب الصالات.
@@ -406,17 +418,25 @@ function home() {
   const streak = streakWeeks();
 
   $('#app').innerHTML = `
-  <header>
-    <div><h1>🏋️ تماريني</h1>
-      ${streak ? `<div class="sub streak">🔥 ${plur(streak, 'أسبوع واحد', 'أسبوعين', 'أسابيع', 'أسبوعاً')} متتالي</div>` : ''}
-    </div>
-    <div class="hlinks">
-      <button class="link" onclick="go('log')">📅 السجل</button>
-    </div></header>
+  ${head('home', 'تماريني',
+    `<div class="hlinks"><button class="link" onclick="go('log')">السجل</button></div>`,
+    streak ? `<span class="streak">${plur(streak, 'أسبوع واحد', 'أسبوعين', 'أسابيع', 'أسبوعاً')} متتالي بلا انقطاع</span>` : 'كل تمرين بيتسجّل هون')}
 
-  <div class="lbl">اختر تمرين اليوم</div>
+  ${(() => {   // بطاقة رئيسية ليوم البرنامج التالي — أوضح خطوة تعملها اليوم
+    const l = done.filter(s => s.day === next).pop();
+    const r = l && recoveryInfo(next);
+    const st = !l ? 'أول مرة تجرّبه' : r.ready ? `جاهز · آخر مرة ${ago(l.date)}`
+      : `آخر مرة ${ago(l.date)} · لسا بده ${r.remainH < 24 ? r.remainH + ' ساعة' : plur(Math.round(r.remainH / 24), 'يوم', 'يومين', 'أيام', 'يوماً')}`;
+    return `<button class="hero" style="--dc:${DAY_ACC[next]}" onclick="buzz(10);start('${next}')">
+      <span class="hero-bg">${DAY_ICON[next]}</span>
+      <span class="hero-txt"><em>تمرين اليوم المقترح</em><b>${PROGRAM[next].name}</b><i>${st}</i></span>
+      <span class="hero-go">ابدأ</span>
+    </button>`;
+  })()}
+
+  <div class="lbl">أو اختر يوم ثاني</div>
   <div class="daylist">
-    ${keys.map(k => {
+    ${keys.filter(k => k !== next).map(k => {
       const l = done.filter(s => s.day === k).pop();
       const r = l && recoveryInfo(k);
       const chip = !l ? '<span class="chip start">ابدأ</span>'
@@ -705,7 +725,8 @@ function miniCalendar() {
 function log() {
   const list = S.sessions.slice().reverse();
   $('#app').innerHTML = `
-  <header><h1>📅 السجل</h1><button class="link" onclick="go('home')">رجوع</button></header>
+  ${head('log', 'السجل', `<button class="link" onclick="go('home')">رجوع</button>`,
+    plur(S.sessions.length, 'تمرين واحد محفوظ', 'تمرينان محفوظان', 'تمارين محفوظة', 'تمريناً محفوظاً'))}
   ${S.sessions.length ? miniCalendar() : ''}
   ${list.length ? list.map((s, i) => `
     <div class="rec">
@@ -762,11 +783,9 @@ function report() {
   const rep = S.report;
 
   $('#app').innerHTML = `
-  <header><h1>📈 تقرير الأسبوع</h1>
-    <div class="hlinks">
-      <button class="link" onclick="go('records')">🏆 أرقامي</button>
-      <button class="link" onclick="go('home')">رجوع</button>
-    </div></header>
+  ${head('report', 'تقرير الأسبوع',
+    `<div class="hlinks"><button class="link" onclick="go('records')">أرقامي</button>
+      <button class="link" onclick="go('home')">رجوع</button></div>`, 'آخر ٧ أيام وتحليل المدرب')}
 
   ${!S.sessions.length ? '<div class="empty">سجّل أول تمرين وبيبلّش التقرير يشتغل</div>' : `
   <div class="lbl">آخر ٧ أيام</div>
@@ -869,20 +888,29 @@ function exChart(h) {
   const x = i => h.length === 1 ? W / 2 : P + i * (W - P * 2) / (h.length - 1);
   const y = v => H - P - ((v - mn) / rg) * (H - P * 2);
   const d = vals.map((v, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(' ');
+  const area = `${d} L${(W - P).toFixed(1)},${H} L${P},${H} Z`;
   return `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" style="width:100%;height:${H}px;display:block">
-    <path d="${d}" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+    <defs><linearGradient id="exg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="currentColor" stop-opacity=".3"/>
+      <stop offset="1" stop-color="currentColor" stop-opacity="0"/></linearGradient></defs>
+    <path d="${area}" fill="url(#exg)" stroke="none"/>
+    <path d="${d}" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"/>
     ${vals.map((v, i) => `<circle cx="${x(i).toFixed(1)}" cy="${y(v).toFixed(1)}" r="2.4" fill="currentColor"/>`).join('')}
   </svg>`;
 }
 
 // شارات إنجاز بسيطة مبنية على أرقامك الفعلية — بلا أي تعقيد إضافي، بس محطات تستاهل احتفال
+const MEDAL = `<svg viewBox="0 0 24 24" ${ICON_S}><circle cx="12" cy="14.8" r="5.4"/><path d="M8.6 9.6 5.6 3.5h4.3l1.6 3.4M15.4 9.6l3-6.1h-4.3"/></svg>`;
 const BADGES = [
-  { id: 'b1', icon: '🥉', name: 'البداية', need: s => s.sessions.length >= 1 },
-  { id: 'b2', icon: '🥈', name: 'مستمر', need: s => s.sessions.length >= 10 },
-  { id: 'b3', icon: '🥇', name: 'ملتزم', need: s => s.sessions.length >= 50 },
-  { id: 'b4', icon: '💯', name: 'المئة', need: s => s.sessions.length >= 100 },
-  { id: 'b5', icon: '🔥', name: 'شهر كامل', need: () => streakWeeks() >= 4 },
-  { id: 'b6', icon: '👑', name: 'نص سنة', need: () => streakWeeks() >= 26 },
+  { id: 'b1', icon: MEDAL, c: '#b4703a', name: 'البداية', need: s => s.sessions.length >= 1 },
+  { id: 'b2', icon: MEDAL, c: '#9aa6b8', name: 'مستمر', need: s => s.sessions.length >= 10 },
+  { id: 'b3', icon: MEDAL, c: '#e5a017', name: 'ملتزم', need: s => s.sessions.length >= 50 },
+  { id: 'b4', icon: `<svg viewBox="0 0 24 24" ${ICON_S}><path d="M12 3.6l2.6 5.4 5.9.9-4.2 4.2 1 5.9-5.3-2.8-5.3 2.8 1-5.9L3.5 9.9l5.9-.9z"/></svg>`,
+    c: 'var(--acc)', name: 'المئة', need: s => s.sessions.length >= 100 },
+  { id: 'b5', icon: `<svg viewBox="0 0 24 24" ${ICON_S}><path d="M12 3.4s4.6 4.1 4.6 8.2a4.6 4.6 0 1 1-9.2 0c0-1.7.8-3.1 1.7-4.1.2 1.2.9 2 1.7 2 1.3 0 1.7-1.4 1.2-6.1z"/></svg>`,
+    c: 'var(--d1)', name: 'شهر كامل', need: () => streakWeeks() >= 4 },
+  { id: 'b6', icon: `<svg viewBox="0 0 24 24" ${ICON_S}><path d="M4.2 18.4h15.6M4.6 18.4 3.4 6.8l5.3 3.5L12 4.4l3.3 5.9 5.3-3.5-1.2 11.6z"/></svg>`,
+    c: 'var(--vio)', name: 'نص سنة', need: () => streakWeeks() >= 26 },
 ];
 
 let prOpen = null;   // معرّف التمرين المفتوح حالياً (رسمه البياني ظاهر)
@@ -893,12 +921,14 @@ function records() {
   })).filter(g => g.items.length);
 
   $('#app').innerHTML = `
-  <header><h1>🏆 أرقامي القياسية</h1><button class="link" onclick="go('report')">رجوع</button></header>
+  ${head('records', 'أرقامي القياسية', `<button class="link" onclick="go('report')">رجوع</button>`,
+    'أعلى رقم وصلته بكل تمرين')}
 
   <div class="badges">
     ${BADGES.map(b => {
       const on = b.need(S);
-      return `<div class="badge${on ? '' : ' locked'}"><span class="bi">${b.icon}</span><span class="bn">${b.name}</span></div>`;
+      return `<div class="badge${on ? '' : ' locked'}"><span class="bi" style="color:${b.c}">${b.icon}</span>
+        <span class="bn">${b.name}</span></div>`;
     }).join('')}
   </div>
 
@@ -950,9 +980,15 @@ function weightChart(list) {
   const x = i => list.length === 1 ? W / 2 : P + i * (W - P * 2) / (list.length - 1);
   const y = v => H - P - ((v - mn) / rg) * (H - P * 2);
   const d = vals.map((v, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(' ');
+  // مساحة متدرّجة تحت الخط — تعطي عمق بدل خط رفيع لحاله
+  const area = `${d} L${(W - P).toFixed(1)},${H} L${P},${H} Z`;
   return `<div class="chartbox">
     <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" style="width:100%;height:${H}px;display:block">
-      <path d="${d}" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+      <defs><linearGradient id="wchg" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="currentColor" stop-opacity=".28"/>
+        <stop offset="1" stop-color="currentColor" stop-opacity="0"/></linearGradient></defs>
+      <path d="${area}" fill="url(#wchg)" stroke="none"/>
+      <path d="${d}" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"/>
       ${vals.map((v, i) => `<circle cx="${x(i).toFixed(1)}" cy="${y(v).toFixed(1)}" r="2.6" fill="currentColor"/>`).join('')}
     </svg>
     <div class="chartrange"><span>${n1(mn)}</span><span>${n1(mx)} كغم</span></div>
@@ -964,7 +1000,8 @@ function body() {
   const latest = list[list.length - 1];
 
   $('#app').innerHTML = `
-  <header><h1>⚖️ قياساتي</h1><button class="link" onclick="go('home')">رجوع</button></header>
+  ${head('body', 'قياساتي', `<button class="link" onclick="go('home')">رجوع</button>`,
+    latest ? `آخر قياس ${ago(latest.date)}` : 'صوّر بطاقة InBody وتتعبّى لحالها')}
 
   ${inbodyBusy ? `<button class="btn" disabled>عم أقرأ البطاقة...</button>` : `
   <div class="photobtns">
@@ -1225,7 +1262,8 @@ function food() {
   const cmp = (isToday && list.length && prevCal) ? Math.round(tot.calories - prevCal) : null;
 
   $('#app').innerHTML = `
-  <header><h1>🍽️ الأكل${isToday ? ' اليوم' : ''}</h1><button class="link" onclick="go('home')">رجوع</button></header>
+  ${head('food', isToday ? 'الأكل اليوم' : 'الأكل', `<button class="link" onclick="go('home')">رجوع</button>`,
+    isToday ? 'صوّر وجبتك وتتحسب لحالها' : fmt(dt))}
 
   ${!isToday ? `<div class="lbl">${fmt(dt)}</div>` : ''}
   ${target ? `
@@ -1295,12 +1333,10 @@ function ask() {
   if (!S.key) return askSetup();
   const c = S.chat || [];
   $('#app').innerHTML = `
-  <header><h1>🤖 اسأل</h1>
-    <div class="hlinks">
-      ${c.length ? '<button class="link" onclick="clearChat()">مسح</button>' : ''}
+  ${head('ask', 'اسأل',
+    `<div class="hlinks">${c.length ? '<button class="link" onclick="clearChat()">مسح</button>' : ''}
       <button class="link" onclick="changeKey()">المفتاح</button>
-      <button class="link" onclick="askEx=null;go('home')">رجوع</button>
-    </div></header>
+      <button class="link" onclick="askEx=null;go('home')">رجوع</button></div>`, 'مدرّبك الشخصي يعرف كل أرقامك')}
   ${askEx ? `<div class="ctx">بخصوص: ${esc(ex(askEx).ar)}</div>` : ''}
   <div class="chat" id="chatBox">
     ${c.length ? c.map(m => `<div class="m ${m.role}">${
@@ -1345,7 +1381,7 @@ function ask() {
 
 function askSetup() {
   $('#app').innerHTML = `
-  <header><h1>🤖 اسأل</h1><button class="link" onclick="go('home')">رجوع</button></header>
+  ${head('ask', 'اسأل', `<button class="link" onclick="go('home')">رجوع</button>`, 'فعّله مرة وحدة بلصق مفتاح Gemini')}
   <input type="text" id="keyIn" class="keyin" placeholder="مفتاح Gemini" value="${esc(S.key || '')}"
          oninput="onKeyInput()" onpaste="setTimeout(onKeyInput,30)">
   <div class="keyerr" id="keyErr"></div>`;

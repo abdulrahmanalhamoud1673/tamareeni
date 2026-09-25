@@ -1,5 +1,8 @@
-const CACHE = 'tamareeni-v44';
-const ASSETS = ['./', './index.html', './app.js', './manifest.json', './icon-192.png', './icon-512.png'];
+const CACHE = 'tamareeni-v45';
+const ASSETS = ['./', './index.html', './app.js', './manifest.json', './icon-192.png', './icon-512.png',
+  './fonts/plex-arabic-400.woff2', './fonts/plex-latin-400.woff2',
+  './fonts/plex-arabic-600.woff2', './fonts/plex-latin-600.woff2',
+  './fonts/plex-arabic-700.woff2', './fonts/plex-latin-700.woff2'];
 
 // صور التمارين — تُخزّن مسبقاً حتى تظهر بدون إنترنت
 const EX_IDS = [

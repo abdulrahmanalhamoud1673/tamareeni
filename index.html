@@ -13,32 +13,42 @@
 <link rel="apple-touch-icon" href="icon-192.png">
 <link rel="icon" href="icon-192.png">
 <style>
+/* خط عربي احترافي مستضاف محلياً — يشتغل حتى بدون إنترنت */
+@font-face{font-family:'Plex Arabic';font-style:normal;font-weight:400;font-display:swap;src:url(fonts/plex-arabic-400.woff2) format('woff2');unicode-range:U+0600-06FF, U+0750-077F, U+0870-088E, U+0890-0891, U+0897-08E1, U+08E3-08FF, U+200C-200E, U+2010-2011, U+204F, U+2E41, U+FB50-FDFF, U+FE70-FE74, U+FE76-FEFC, U+102E0-102FB, U+10E60-10E7E, U+10EC2-10EC4, U+10EFC-10EFF, U+1EE00-1EE03, U+1EE05-1EE1F, U+1EE21-1EE22, U+1EE24, U+1EE27, U+1EE29-1EE32, U+1EE34-1EE37, U+1EE39, U+1EE3B, U+1EE42, U+1EE47, U+1EE49, U+1EE4B, U+1EE4D-1EE4F, U+1EE51-1EE52, U+1EE54, U+1EE57, U+1EE59, U+1EE5B, U+1EE5D, U+1EE5F, U+1EE61-1EE62, U+1EE64, U+1EE67-1EE6A, U+1EE6C-1EE72, U+1EE74-1EE77, U+1EE79-1EE7C, U+1EE7E, U+1EE80-1EE89, U+1EE8B-1EE9B, U+1EEA1-1EEA3, U+1EEA5-1EEA9, U+1EEAB-1EEBB, U+1EEF0-1EEF1}
+@font-face{font-family:'Plex Arabic';font-style:normal;font-weight:400;font-display:swap;src:url(fonts/plex-latin-400.woff2) format('woff2');unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD}
+@font-face{font-family:'Plex Arabic';font-style:normal;font-weight:600;font-display:swap;src:url(fonts/plex-arabic-600.woff2) format('woff2');unicode-range:U+0600-06FF, U+0750-077F, U+0870-088E, U+0890-0891, U+0897-08E1, U+08E3-08FF, U+200C-200E, U+2010-2011, U+204F, U+2E41, U+FB50-FDFF, U+FE70-FE74, U+FE76-FEFC, U+102E0-102FB, U+10E60-10E7E, U+10EC2-10EC4, U+10EFC-10EFF, U+1EE00-1EE03, U+1EE05-1EE1F, U+1EE21-1EE22, U+1EE24, U+1EE27, U+1EE29-1EE32, U+1EE34-1EE37, U+1EE39, U+1EE3B, U+1EE42, U+1EE47, U+1EE49, U+1EE4B, U+1EE4D-1EE4F, U+1EE51-1EE52, U+1EE54, U+1EE57, U+1EE59, U+1EE5B, U+1EE5D, U+1EE5F, U+1EE61-1EE62, U+1EE64, U+1EE67-1EE6A, U+1EE6C-1EE72, U+1EE74-1EE77, U+1EE79-1EE7C, U+1EE7E, U+1EE80-1EE89, U+1EE8B-1EE9B, U+1EEA1-1EEA3, U+1EEA5-1EEA9, U+1EEAB-1EEBB, U+1EEF0-1EEF1}
+@font-face{font-family:'Plex Arabic';font-style:normal;font-weight:600;font-display:swap;src:url(fonts/plex-latin-600.woff2) format('woff2');unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD}
+@font-face{font-family:'Plex Arabic';font-style:normal;font-weight:700;font-display:swap;src:url(fonts/plex-arabic-700.woff2) format('woff2');unicode-range:U+0600-06FF, U+0750-077F, U+0870-088E, U+0890-0891, U+0897-08E1, U+08E3-08FF, U+200C-200E, U+2010-2011, U+204F, U+2E41, U+FB50-FDFF, U+FE70-FE74, U+FE76-FEFC, U+102E0-102FB, U+10E60-10E7E, U+10EC2-10EC4, U+10EFC-10EFF, U+1EE00-1EE03, U+1EE05-1EE1F, U+1EE21-1EE22, U+1EE24, U+1EE27, U+1EE29-1EE32, U+1EE34-1EE37, U+1EE39, U+1EE3B, U+1EE42, U+1EE47, U+1EE49, U+1EE4B, U+1EE4D-1EE4F, U+1EE51-1EE52, U+1EE54, U+1EE57, U+1EE59, U+1EE5B, U+1EE5D, U+1EE5F, U+1EE61-1EE62, U+1EE64, U+1EE67-1EE6A, U+1EE6C-1EE72, U+1EE74-1EE77, U+1EE79-1EE7C, U+1EE7E, U+1EE80-1EE89, U+1EE8B-1EE9B, U+1EEA1-1EEA3, U+1EEA5-1EEA9, U+1EEAB-1EEBB, U+1EEF0-1EEF1}
+@font-face{font-family:'Plex Arabic';font-style:normal;font-weight:700;font-display:swap;src:url(fonts/plex-latin-700.woff2) format('woff2');unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD}
 :root{
-  --bg:#ffffff; --tx:#111111; --mut:#8c8c8c; --line:#e6e6e6; --soft:#f6f6f6;
-  --acc:#0066ff; --acc-fg:#ffffff;         /* اللون التوقيعي: أزرق كهربائي */
-  --good:#16a34a; --warn:#d97706;          /* دلالات: تطوّر / انتبه */
+  /* خلفية رمادية فاتحة والبطاقات بيضا فوقها — عشان يبان عمق بدل سطح أبيض واحد */
+  --bg:#f4f5f8; --tx:#0f1422; --mut:#6b7280; --line:#e3e6ec; --soft:#eef0f4;
+  --acc:#2b5cff; --acc-fg:#ffffff;         /* اللون التوقيعي: أزرق كهربائي */
+  --good:#12a150; --warn:#c2740b;          /* دلالات: تطوّر / انتبه */
   --food:#0d9488;                          /* لون ميزة الأكل */
-  --d1:#dc2626; --d2:#7c3aed; --d3:#d97706; --d4:#16a34a;  /* لون كل يوم تمرين */
-  --vio:#7c3aed; --navbg:rgba(255,255,255,.8); --navon:var(--acc);  /* الشريط السفلي العائم */
-  --r:16px;                                     /* انحناء موحّد لكل البطاقات */
+  --d1:#e0393b; --d2:#7c3aed; --d3:#d97706; --d4:#0f9d58;  /* لون كل يوم تمرين */
+  --vio:#7c3aed; --navbg:rgba(255,255,255,.82); --navon:var(--acc);  /* الشريط السفلي العائم */
+  --r:18px;                                     /* انحناء موحّد لكل البطاقات */
   --card:#ffffff;                               /* خلفية البطاقة */
-  --sh:0 1px 2px rgba(16,24,40,.04), 0 10px 26px -20px rgba(16,24,40,.35);   /* ظل ناعم */
+  --sh:0 1px 2px rgba(16,24,40,.05), 0 12px 28px -22px rgba(16,24,40,.45);   /* ظل ناعم */
 }
 @media (prefers-color-scheme: dark){
-  :root{ --bg:#0d0d0d; --tx:#f2f2f2; --mut:#8c8c8c; --line:#232323; --soft:#171717;
-    --acc:#2f6fed;
-    --good:#4ade80; --warn:#fbbf24; --food:#2dd4bf;
-    --d1:#f87171; --d2:#a78bfa; --d3:#fbbf24; --d4:#4ade80;
-    --vio:#a78bfa; --navbg:rgba(22,22,30,.78); --navon:#ffffff;
-    --card:#141418; --sh:0 1px 0 rgba(255,255,255,.03) inset, 0 12px 30px -24px #000;
+  /* غامق بميلان أزرق خفيف بدل الأسود الميت، وطبقة بطاقة أفتح منه */
+  :root{ --bg:#0a0c11; --tx:#eef1f6; --mut:#8b93a3; --line:#20242e; --soft:#161a22;
+    --acc:#4d7dff;
+    --good:#3ddc84; --warn:#fbbf24; --food:#2dd4bf;
+    --d1:#fb7185; --d2:#a78bfa; --d3:#fbbf24; --d4:#34d399;
+    --vio:#a78bfa; --navbg:rgba(18,21,28,.8); --navon:#ffffff;
+    --card:#131722; --sh:0 1px 0 rgba(255,255,255,.04) inset, 0 16px 34px -26px #000;
   }
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;padding:0}
 body{
   background:var(--bg); color:var(--tx);
-  font-family:"Segoe UI",Tahoma,-apple-system,"Helvetica Neue",Arial,sans-serif;
-  font-size:17px; line-height:1.6; -webkit-font-smoothing:antialiased;
+  font-family:'Plex Arabic',"Segoe UI",Tahoma,-apple-system,"Helvetica Neue",Arial,sans-serif;
+  font-size:16.5px; line-height:1.65; -webkit-font-smoothing:antialiased;
+  letter-spacing:-.005em;
 }
 input,button{font-family:inherit;font-size:inherit;color:inherit}
 button{cursor:pointer}
@@ -58,9 +68,16 @@ header{
   -webkit-backdrop-filter:blur(14px) saturate(1.4);backdrop-filter:blur(14px) saturate(1.4);
   border-bottom:1px solid transparent;transition:border-color .25s}
 body.scrolled header{border-bottom-color:var(--line)}
-header h1{font-size:20px;font-weight:600;margin:0;letter-spacing:-.2px}
-header .sub{color:var(--mut);font-size:14px;font-variant-numeric:tabular-nums}
-header .sub.streak{color:var(--acc);font-weight:600;margin-top:2px}
+header h1{font-size:21px;font-weight:700;margin:0;letter-spacing:-.4px;line-height:1.25}
+header .sub{color:var(--mut);font-size:12.5px;font-variant-numeric:tabular-nums;margin-top:1px}
+header .streak{color:var(--acc);font-weight:600}
+/* عنوان الصفحة: أيقونة ملوّنة + العنوان + سطر فرعي */
+.htitle{display:flex;align-items:center;gap:11px;min-width:0}
+.hicon{width:40px;height:40px;flex:none;border-radius:13px;display:grid;place-items:center;
+  color:var(--acc);background:color-mix(in srgb,currentColor 13%,transparent)}
+.hicon svg{width:21px;height:21px;display:block}
+.hicon.food{color:var(--food)} .hicon.body{color:var(--d2)}
+.hicon.records{color:var(--d3)} .hicon.log{color:var(--mut)}
 .link{background:none;border:0;color:var(--mut);font-size:15px;padding:6px 0}
 .link:active{color:var(--tx)}
 .hlinks{display:flex;gap:18px;align-items:center}
@@ -102,7 +119,27 @@ header .sub.streak{color:var(--acc);font-weight:600;margin-top:2px}
 .askbtn{margin-top:0;margin-bottom:22px}
 
 /* ---------- الصفحة الرئيسية ---------- */
-.lbl{color:var(--mut);font-size:13px;letter-spacing:.02em;margin:26px 0 10px}
+.lbl{color:var(--mut);font-size:12.5px;font-weight:600;letter-spacing:.04em;margin:26px 0 10px;
+  display:flex;align-items:center;gap:8px}
+.lbl::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,var(--line),transparent)}
+/* البطاقة الرئيسية: يوم البرنامج التالي */
+.hero{position:relative;overflow:hidden;width:100%;text-align:right;color:inherit;display:flex;
+  align-items:center;justify-content:space-between;gap:12px;margin-top:4px;
+  border:1px solid color-mix(in srgb,var(--dc) 35%,var(--line));border-radius:22px;padding:20px;
+  background:linear-gradient(135deg,color-mix(in srgb,var(--dc) 20%,var(--card)),var(--card) 70%);
+  box-shadow:0 18px 40px -28px var(--dc), var(--sh);
+  transition:transform .18s ease, box-shadow .18s ease}
+.hero:active{transform:scale(.99)}
+.hero-bg{position:absolute;inset-inline-start:-18px;top:50%;transform:translateY(-50%);
+  color:var(--dc);opacity:.13;pointer-events:none}
+.hero-bg svg{width:118px;height:118px;display:block}
+.hero-txt{display:flex;flex-direction:column;gap:3px;min-width:0;position:relative}
+.hero-txt em{font-style:normal;font-size:11.5px;font-weight:600;letter-spacing:.03em;color:var(--dc)}
+.hero-txt b{font-size:25px;font-weight:700;letter-spacing:-.6px;line-height:1.2}
+.hero-txt i{font-style:normal;font-size:12.5px;color:var(--mut)}
+.hero-go{position:relative;flex:none;font-size:14px;font-weight:700;color:#fff;padding:11px 20px;border-radius:99px;
+  background:var(--dc);box-shadow:0 10px 22px -12px var(--dc)}
+
 .daylist{display:flex;flex-direction:column;gap:10px}
 .day{
   display:flex;align-items:center;justify-content:space-between;gap:12px;
@@ -313,10 +350,12 @@ header h1.dlbl .dicon svg{width:21px;height:21px}
 .badges{display:flex;gap:8px;overflow-x:auto;padding-bottom:6px;margin-bottom:8px;-webkit-overflow-scrolling:touch}
 .badge{flex:none;display:flex;flex-direction:column;align-items:center;gap:4px;width:66px;
   border:1px solid var(--line);border-radius:14px;padding:10px 4px;background:var(--card)}
-.badge .bi{font-size:22px}
+.badge .bi{display:grid;place-items:center;width:34px;height:34px;border-radius:11px;
+  background:color-mix(in srgb,currentColor 14%,transparent)}
+.badge .bi svg{width:20px;height:20px;display:block}
 .badge .bn{font-size:10.5px;color:var(--mut);text-align:center;line-height:1.3}
-.badge.locked{opacity:.32}
-.badge.locked .bi{filter:grayscale(1)}
+.badge.locked{opacity:.4}
+.badge.locked .bi{color:var(--mut) !important;background:var(--soft)}
 .prchart{padding:14px 15px;border-bottom:1px solid var(--line)}
 .prchart p{margin:6px 0 0}
 
