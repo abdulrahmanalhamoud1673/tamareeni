@@ -530,7 +530,9 @@ function exSection(i) {
     const wcol = e.bw ? '<div class="num flat">وزن الجسم</div>' : null;
     const up = readyToAdd(it.ex, S.active.day);
     const note = S.notes[it.ex] || '';
-    return `<section class="ex">
+    const allDone = it.sets.every(x => x.done);   // خلّصت التمرين كله
+    return `<section class="ex${allDone ? ' done' : ''}">
+      ${allDone ? '<span class="exdone">تم</span>' : ''}
       <div class="head">
         <img class="thumb" src="img/${it.ex}-0.jpg" alt="" loading="lazy"
              onclick="pic('${it.ex}')" onerror="this.remove()">
@@ -795,6 +797,24 @@ function report() {
     <div><b>${w.sets}</b><i>${w.sets === 1 ? 'مجموعة' : w.sets === 2 ? 'مجموعتان' : w.sets <= 10 ? 'مجموعات' : 'مجموعة'}</i></div>
   </div>
 
+  <div class="lbl">حجم كل يوم</div>
+  <div class="daybars">
+    ${(() => {
+      const days = Array.from({ length: 7 }, (_, n) => {
+        const dt = new Date(); dt.setDate(dt.getDate() - (6 - n));
+        const ds = `${dt.getFullYear()}-${pad(dt.getMonth() + 1)}-${pad(dt.getDate())}`;
+        const ss = S.sessions.filter(x => x.date === ds);
+        const sets = ss.reduce((a, x) => a + x.entries.reduce((b, e) => b + e.sets.length, 0), 0);
+        return { ds, sets, day: ss[0] && ss[0].day, lbl: ['أحد','اثنين','ثلاثا','أربعا','خميس','جمعة','سبت'][dt.getDay()] };
+      });
+      const mx = Math.max(1, ...days.map(x => x.sets));
+      return days.map(x => `<div class="dbar" style="--dc:${x.day ? DAY_ACC[x.day] : 'var(--line)'}">
+        <span class="dbv">${x.sets || ''}</span>
+        <u><s style="height:${x.sets ? Math.max(8, x.sets / mx * 100) : 0}%"></s></u>
+        <em>${x.lbl}</em></div>`).join('');
+    })()}
+  </div>
+
   ${ch.up.length ? `<div class="lbl">⬆️ تطوّرت</div>
   <div class="rlist">${ch.up.map(c => `<div class="rrow"><span>${esc(ex(c.id).ar)}</span>
     <b class="good">${n1(c.from)} ← ${n1(c.to)} ${c.reps ? 'عدة' : exUnit(c.id)}</b></div>`).join('')}</div>` : ''}
@@ -973,6 +993,20 @@ function delBody(idx) {
   save(); render();
 }
 
+// خط مصغّر لسلسلة أرقام — يوري الاتجاه بنظرة بدل صف أرقام خام
+function sparkline(arr) {
+  const W = 300, H = 34, P = 3;
+  const mn = Math.min(...arr), mx = Math.max(...arr), rg = (mx - mn) || 1;
+  const x = i => P + i * (W - P * 2) / (arr.length - 1);
+  const y = v => H - P - ((v - mn) / rg) * (H - P * 2);
+  const d = arr.map((v, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(' ');
+  return `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" style="width:100%;height:${H}px;display:block;color:var(--c)">
+    <path d="${d} L${W - P},${H} L${P},${H} Z" fill="currentColor" opacity=".13" stroke="none"/>
+    <path d="${d}" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+    <circle cx="${x(arr.length - 1).toFixed(1)}" cy="${y(arr[arr.length - 1]).toFixed(1)}" r="3" fill="currentColor"/>
+  </svg>`;
+}
+
 function weightChart(list) {
   const W = 320, H = 92, P = 10;
   const vals = list.map(b => b.weight);
@@ -1014,11 +1048,30 @@ function body() {
 
   ${latest ? `
   <div class="lbl">آخر قياس — ${fmt(latest.date)}${latest.source === 'inbody' ? ' · InBody' : ''}</div>
-  <div class="rstats">
-    <div><b>${n1(latest.weight)}</b><i>كغم</i></div>
-    <div><b>${latest.pbf != null ? n1(latest.pbf) + '%' : '—'}</b><i>نسبة الدهون</i></div>
-    <div><b>${latest.smm != null ? n1(latest.smm) : '—'}</b><i>عضلات كغم</i></div>
-  </div>
+  ${(() => {   // بطاقة الوزن: الرقم كبير + الفرق عن القياس اللي قبله + رحلتك للهدف
+    const prev = list[list.length - 2];
+    const dw = prev ? Math.round((latest.weight - prev.weight) * 10) / 10 : null;
+    const start = list[0].weight, tgt = INBODY_CARD.target;
+    const span = start - tgt;
+    const pc = span > 0 ? Math.max(0, Math.min(100, Math.round((start - latest.weight) / span * 100))) : 0;
+    return `<div class="wcard">
+      <div class="wtop">
+        <div><b>${n1(latest.weight)}<em>كغم</em></b>
+          ${dw !== null ? `<u class="${dw < 0 ? 'good' : dw > 0 ? 'warn' : ''}">${
+            dw === 0 ? 'نفس القياس اللي قبله' :
+            `${dw < 0 ? '▼ نزلت' : '▲ زدت'} ${n1(Math.abs(dw))} كغم عن ${ago(prev.date)}`}</u>` : ''}</div>
+        <div class="wmini">
+          <span><em>دهون</em><b>${latest.pbf != null ? n1(latest.pbf) + '%' : '—'}</b></span>
+          <span><em>عضلات</em><b>${latest.smm != null ? n1(latest.smm) : '—'}</b></span>
+        </div>
+      </div>
+      <div class="wgoal">
+        <div class="wgl"><span>من ${n1(start)}</span><span>الهدف ${n1(tgt)} كغم</span></div>
+        <u><s style="width:${pc}%"></s></u>
+        <i>${pc >= 100 ? 'وصلت هدفك 💪' : `قطعت ${pc}٪ من الطريق · باقي ${n1(Math.max(0, Math.round((latest.weight - tgt) * 10) / 10))} كغم`}</i>
+      </div>
+    </div>`;
+  })()}
   <div class="rlist" style="margin-top:9px">
     ${latest.bmi != null ? `<div class="rrow"><span>مؤشر كتلة الجسم</span><b>${n1(latest.bmi)}</b></div>` : ''}
     ${latest.visceral != null ? `<div class="rrow"><span>الدهون الحشوية</span><b>${latest.visceral}</b></div>` : ''}
@@ -1040,15 +1093,22 @@ function body() {
       </div>`).join('')}
   </div>` : ''}
 
-  <div class="lbl">من بطاقة InBody الأخيرة</div>
-  <p class="muted sm">القياسات الثمانية المطبوعة على البطاقة، من الأقدم للأحدث:</p>
+  <div class="lbl">مسار بطاقة InBody</div>
   <div class="histbox">
-    <div class="seqrow"><em>الوزن (كغم)</em>${INBODY_HISTORY.weight.map(n1).join('   ')}</div>
-    <div class="seqrow"><em>العضلات SMM (كغم)</em>${INBODY_HISTORY.smm.map(n1).join('   ')}</div>
-    <div class="seqrow"><em>الدهون PBF (%)</em>${INBODY_HISTORY.pbf.map(n1).join('   ')}</div>
+    ${[['الوزن', INBODY_HISTORY.weight, 'كغم', 'var(--acc)', -1],
+       ['العضلات SMM', INBODY_HISTORY.smm, 'كغم', 'var(--d4)', 1],
+       ['الدهون PBF', INBODY_HISTORY.pbf, '%', 'var(--d1)', -1]].map(([n, arr, unit, c, up]) => {
+      const now = arr[arr.length - 1], diff = Math.round((now - arr[0]) * 10) / 10;
+      const cls = diff === 0 ? '' : (diff > 0 ? up > 0 : up < 0) ? 'good' : 'warn';
+      return `<div class="spark" style="--c:${c}">
+        <div class="stop"><em>${n}</em>
+          <span><b>${n1(now)} ${unit}</b>${diff ? `<i class="${cls}">${diff > 0 ? '+' : '−'}${n1(Math.abs(diff))}</i>` : ''}</span></div>
+        ${sparkline(arr)}
+      </div>`;
+    }).join('')}
   </div>
 
-  <div class="lbl">🥗 خطة غذائية</div>
+  <div class="lbl">خطة غذائية</div>
   ${S.diet ? `
   <div class="rstats">
     <div><b>${nK(S.diet.calories)}</b><i>سعرة/يوم</i></div>
@@ -1271,13 +1331,23 @@ function food() {
     <div class="calnum"><b>${nK(tot.calories)}</b><i>من ${nK(target)} سعرة</i></div>
   </div>` : `
   <div class="rstats" style="grid-template-columns:1fr"><div><b>${nK(tot.calories)}</b><i>سعرة</i></div></div>`}
-  ${cmp != null ? `<p class="cmpline ${cmp > 0 ? 'warn' : cmp < 0 ? 'good' : ''}">
-    ${cmp === 0 ? 'نفس آخر يوم مسجّل' : `${cmp > 0 ? '▲' : '▼'} ${nK(Math.abs(cmp))} سعرة ${cmp > 0 ? 'أكثر من' : 'أقل من'} آخر يوم مسجّل`}
-  </p>` : ''}
-  <div class="rstats" style="margin-top:9px">
-    <div><b>${Math.round(tot.protein)}</b><i>بروتين غ</i></div>
-    <div><b>${Math.round(tot.carbs)}</b><i>كارب غ</i></div>
-    <div><b>${Math.round(tot.fat)}</b><i>دهون غ</i></div>
+  ${target ? `<p class="cmpline ${tot.calories > target ? 'warn' : 'good'}">${
+      tot.calories > target ? `تجاوزت هدفك بـ${nK(tot.calories - target)} سعرة`
+                            : `باقي لك ${nK(target - tot.calories)} سعرة اليوم`}</p>` : ''}
+  ${cmp != null ? `<p class="cmpline sub2">${
+    cmp === 0 ? 'نفس آخر يوم مسجّل' : `${cmp > 0 ? '▲' : '▼'} ${nK(Math.abs(cmp))} سعرة ${cmp > 0 ? 'أكثر من' : 'أقل من'} آخر يوم مسجّل`}</p>` : ''}
+
+  <div class="lbl">العناصر الغذائية</div>
+  <div class="macros">
+    ${[['بروتين', tot.protein, S.diet && S.diet.protein, 'var(--acc)'],
+       ['كارب', tot.carbs, S.diet && S.diet.carbs, 'var(--d3)'],
+       ['دهون', tot.fat, S.diet && S.diet.fat, 'var(--d2)']].map(([n, v, t, c]) => {
+      const pc = t ? Math.min(100, Math.round(v / t * 100)) : 0;
+      return `<div class="macro" style="--c:${c}">
+        <span class="mtop"><em>${n}</em><b>${Math.round(v)}${t ? `<i> من ${t} غ</i>` : ' غ'}</b></span>
+        ${t ? `<u><s style="width:${pc}%"></s></u>` : ''}
+      </div>`;
+    }).join('')}
   </div>
 
   ${isToday ? `
@@ -1304,7 +1374,8 @@ function food() {
                 : '<div class="mealph"></div>'}
         <div class="mealinfo">
           <b>${esc(m.label)}</b>
-          <span>${nK(m.calories)} سعرة · ${m.protein}غ بروتين · ${m.carbs}غ كارب · ${m.fat}غ دهون</span>
+          <span class="mmac"><em class="kcal">${nK(m.calories)} سعرة</em>
+            <em>${m.protein}غ بروتين</em><em>${m.carbs}غ كارب</em><em>${m.fat}غ دهون</em></span>
           <time>${new Date(m.time).toLocaleTimeString('ar', { hour: '2-digit', minute: '2-digit' })}</time>
         </div>
         ${trash(`delMeal('${dt}',${list.length - 1 - i})`, 'حذف الوجبة')}
@@ -1342,7 +1413,10 @@ function ask() {
     ${c.length ? c.map(m => `<div class="m ${m.role}">${
         m._img ? `<img src="${m._img}" alt="">` : m.img ? '<div class="imgnote">صورة</div>' : ''
       }${m.role === 'me' ? esc(m.text) : fmtAi(m.text)}</div>`).join('')
-      : `<div class="hintbox">صوّر أي جهاز في النادي واسأل عنه، أو اكتب سؤالك مباشرة.</div>`}
+      : `<div class="hintbox"><span class="hicon ask">${ICON.ask}</span>
+          <b>مدرّبك جاهز</b>
+          <p>بيعرف برنامجك وأوزانك وأرقامك القياسية. صوّر أي جهاز بالنادي واسأل عنه، أو اكتب سؤالك على طول.</p>
+         </div>`}
     ${pending ? `<div class="m me pend"><img src="${pending}" alt=""><span class="muted">جاهزة للإرسال</span></div>` : ''}
     ${busy ? '<div class="m ai typing"><span></span><span></span><span></span></div>' : ''}
   </div>

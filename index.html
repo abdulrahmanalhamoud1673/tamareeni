@@ -95,14 +95,19 @@ header .streak{color:var(--acc);font-weight:600}
 /* ---------- المساعد ---------- */
 .ctx{color:var(--mut);font-size:13.5px;border:1px solid var(--line);border-radius:9px;padding:8px 13px;margin-bottom:4px}
 .chat{display:flex;flex-direction:column;gap:12px;margin:18px 0 8px;min-height:40vh}
-.m{max-width:88%;padding:11px 15px;border-radius:15px;font-size:15px;line-height:1.75;word-wrap:break-word}
-.m.me{align-self:flex-start;background:var(--accf);color:var(--acc-fg);border-bottom-right-radius:4px}
-.m.ai{align-self:flex-end;background:var(--soft);border:1px solid var(--line);border-bottom-left-radius:4px}
+.m{max-width:86%;padding:12px 16px;border-radius:20px;font-size:15px;line-height:1.75;word-wrap:break-word}
+.m.me{align-self:flex-start;background:var(--accf);color:var(--acc-fg);border-bottom-right-radius:6px;font-weight:500;
+  box-shadow:0 8px 20px -14px color-mix(in srgb,var(--accf) 90%,transparent)}
+.m.ai{align-self:flex-end;background:var(--card);border:1px solid var(--line);border-bottom-left-radius:6px;box-shadow:var(--sh)}
 .m.pend{opacity:.55}
 .m img{width:100%;max-width:210px;border-radius:9px;margin-bottom:7px;display:block}
 .m .muted{font-size:12.5px;opacity:.8}
 .imgnote{font-size:12px;opacity:.7;margin-bottom:4px}
-.hintbox{color:var(--mut);font-size:14.5px;text-align:center;padding:34px 20px;line-height:1.9}
+.hintbox{display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center;padding:38px 24px}
+.hintbox .hicon{width:52px;height:52px;border-radius:17px}
+.hintbox .hicon svg{width:26px;height:26px}
+.hintbox b{font-size:17px;font-weight:700}
+.hintbox p{margin:0;color:var(--mut);font-size:13.5px;line-height:1.8;max-width:270px}
 .typing{display:flex;gap:5px;align-items:center;padding:15px}
 .typing span{width:6px;height:6px;border-radius:50%;background:var(--mut);animation:blink 1.2s infinite}
 .typing span:nth-child(2){animation-delay:.2s}
@@ -113,8 +118,9 @@ header .streak{color:var(--acc);font-weight:600}
 .keyerr:empty{display:none}
 .keyerr .raw{color:var(--mut);font-size:11.5px;margin-top:7px;direction:ltr;text-align:left;opacity:.8}
 .chips{display:flex;gap:7px;overflow-x:auto;padding-bottom:4px;-webkit-overflow-scrolling:touch}
-.chips button{flex:none;background:none;border:1px solid var(--line);border-radius:99px;
-  padding:7px 14px;font-size:13px;color:var(--mut);white-space:nowrap}
+.chips button{flex:none;background:var(--card);border:1px solid var(--line);border-radius:99px;
+  padding:8px 15px;font-size:13px;font-weight:600;color:var(--tx);white-space:nowrap;box-shadow:var(--sh)}
+.chips button:active{background:var(--soft)}
 .askbar{position:sticky;bottom:calc(86px + env(safe-area-inset-bottom));background:var(--bg);display:flex;gap:8px;align-items:center;
   padding:12px 0;margin-top:8px;box-shadow:0 12px 0 var(--bg)}  /* يغطّي الفراغ بينه وبين الشريط العائم */
 .askbar input[type=text]{flex:1;min-width:0;background:var(--soft);border:1px solid var(--line);
@@ -197,8 +203,12 @@ header h1.dlbl .dicon svg{width:21px;height:21px}
   transition:width .45s cubic-bezier(.3,1.2,.5,1)}
 
 /* ---------- التمرين ---------- */
-.ex{padding:24px 0;border-bottom:1px solid var(--line)}
-.ex:last-of-type{border-bottom:0}
+/* كل تمرين ببطاقة مستقلة بدل خطوط فاصلة */
+.ex{position:relative;padding:16px 16px 10px;margin-bottom:12px;border:1px solid var(--line);
+  border-radius:var(--r);background:var(--card);box-shadow:var(--sh);transition:opacity .3s ease}
+.ex.done{opacity:.62}
+.exdone{position:absolute;top:14px;inset-inline-end:14px;font-size:10.5px;font-weight:700;
+  color:var(--good);background:color-mix(in srgb,var(--good) 15%,transparent);padding:3px 9px;border-radius:99px}
 .ex h2{font-size:18px;font-weight:600;margin:0 0 4px;
   display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 12px}
 .ex h2 .en{color:var(--mut);font-size:13.5px;font-weight:400;letter-spacing:.01em;
@@ -211,9 +221,11 @@ header h1.dlbl .dicon svg{width:21px;height:21px}
 .note::before{content:'';position:absolute;right:0;top:8px;width:5px;height:5px;border-radius:50%;background:var(--mut)}
 .noteinput{width:100%;margin-top:6px;background:var(--soft);border:1px solid var(--line);
   border-radius:8px;padding:9px 12px;font-size:14px}
-.ssgroup{border-right:2px solid var(--dc,var(--tx));padding-right:16px;margin:6px 0}
-.ssgroup .ex:last-of-type{border-bottom:0}
-.sslabel{color:var(--mut);font-size:12px;padding-top:22px}
+/* مجموعة السوبرست: إطار متقطّع بلون اليوم يلمّ التمرينين مع بعض */
+.ssgroup{border:1px dashed color-mix(in srgb,var(--dc) 45%,var(--line));border-radius:22px;
+  background:color-mix(in srgb,var(--dc) 5%,transparent);padding:10px 10px 0;margin-bottom:12px}
+.ssgroup .ex{box-shadow:none}
+.sslabel{color:var(--dc);font-size:11px;font-weight:700;padding:4px 4px 10px}
 .head{display:flex;gap:14px;align-items:flex-start;margin-bottom:16px}
 .head > div{flex:1;min-width:0}
 .thumb{width:56px;height:56px;flex:none;border:1px solid var(--line);border-radius:8px;
@@ -338,6 +350,17 @@ header h1.dlbl .dicon svg{width:21px;height:21px}
 .rstats i{font-style:normal;font-size:11.5px;color:var(--mut)}
 .rstats u{display:block;text-decoration:none;font-size:11px;color:var(--mut);margin-top:4px;direction:rtl}
 .rstats u.pos{color:var(--good);font-weight:600}
+/* أعمدة حجم التمرين لآخر ٧ أيام */
+.daybars{display:flex;gap:7px;align-items:flex-end;border:1px solid var(--line);border-radius:var(--r);
+  background:var(--card);box-shadow:var(--sh);padding:14px 12px 11px}
+.dbar{flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;min-width:0}
+.dbar .dbv{font-size:10.5px;font-weight:700;color:var(--dc);height:13px;font-variant-numeric:tabular-nums}
+.dbar u{display:block;width:100%;height:64px;border-radius:9px;background:var(--soft);
+  display:flex;align-items:flex-end;overflow:hidden}
+.dbar s{display:block;width:100%;text-decoration:none;border-radius:9px;background:var(--dc);
+  transition:height .5s cubic-bezier(.3,1.2,.5,1)}
+.dbar em{font-style:normal;font-size:9.5px;color:var(--mut)}
+
 .rlist{border:1px solid var(--line);border-radius:var(--r);overflow:hidden;background:var(--card);box-shadow:var(--sh)}
 .rrow{display:flex;justify-content:space-between;align-items:baseline;gap:12px;
   padding:12px 15px;border-bottom:1px solid var(--line);font-size:15px}
@@ -370,7 +393,35 @@ header h1.dlbl .dicon svg{width:21px;height:21px}
 /* ---------- قياساتي ---------- */
 .chartbox{border:1px solid var(--line);border-radius:var(--r);padding:14px 16px 12px;margin-top:14px;background:var(--card);box-shadow:var(--sh)}
 .chartrange{display:flex;justify-content:space-between;font-size:11.5px;color:var(--mut);margin-top:8px;direction:ltr}
-.histbox{border:1px solid var(--line);border-radius:var(--r);padding:14px 16px;background:var(--card);box-shadow:var(--sh)}
+.histbox{border:1px solid var(--line);border-radius:var(--r);padding:14px 16px;background:var(--card);box-shadow:var(--sh);
+  display:flex;flex-direction:column;gap:14px}
+/* بطاقة الوزن الرئيسية */
+.wcard{border:1px solid var(--line);border-radius:var(--r);background:var(--card);box-shadow:var(--sh);padding:16px 18px}
+.wtop{display:flex;align-items:flex-start;justify-content:space-between;gap:14px}
+.wtop b{display:block;font-size:40px;font-weight:700;letter-spacing:-1.5px;line-height:1;font-variant-numeric:tabular-nums}
+.wtop b em{font-style:normal;font-size:14px;font-weight:600;color:var(--mut);margin-inline-start:6px;letter-spacing:0}
+.wtop u{display:block;text-decoration:none;font-size:12.5px;color:var(--mut);margin-top:7px;font-weight:600}
+.wtop u.good{color:var(--good)} .wtop u.warn{color:var(--warn)}
+.wmini{display:flex;gap:8px;flex:none}
+.wmini span{display:flex;flex-direction:column;align-items:center;gap:2px;background:var(--soft);
+  border-radius:12px;padding:8px 11px;min-width:62px}
+.wmini em{font-style:normal;font-size:10.5px;color:var(--mut)}
+.wmini b{font-size:15px;font-weight:700;font-variant-numeric:tabular-nums}
+.wgoal{margin-top:16px}
+.wgl{display:flex;justify-content:space-between;font-size:11.5px;color:var(--mut);margin-bottom:6px}
+.wgoal u{display:block;text-decoration:none;height:8px;border-radius:99px;background:var(--soft);overflow:hidden}
+.wgoal s{display:block;height:100%;text-decoration:none;border-radius:99px;
+  background:linear-gradient(90deg,var(--accf),var(--vio));transition:width .6s cubic-bezier(.3,1.2,.5,1)}
+.wgoal i{display:block;font-style:normal;font-size:11.5px;color:var(--mut);margin-top:7px}
+/* الخطوط المصغّرة لبطاقة الإنبدي */
+.spark .stop{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:3px}
+.spark em{font-style:normal;font-size:12.5px;color:var(--mut);font-weight:600}
+.spark .stop span{display:flex;align-items:center;gap:7px}
+.spark b{font-size:12.5px;font-weight:700;color:var(--c);font-variant-numeric:tabular-nums}
+.spark i{font-style:normal;font-size:10.5px;font-weight:700;padding:2px 7px;border-radius:99px;
+  color:var(--mut);background:var(--soft);font-variant-numeric:tabular-nums}
+.spark i.good{color:var(--good);background:color-mix(in srgb,var(--good) 14%,transparent)}
+.spark i.warn{color:var(--warn);background:color-mix(in srgb,var(--warn) 14%,transparent)}
 .seqrow{color:var(--mut);font-size:13.5px;font-variant-numeric:tabular-nums;direction:rtl;margin-bottom:11px;line-height:1.6}
 .seqrow:last-child{margin-bottom:0}
 .seqrow em{font-style:normal;display:block;margin-bottom:3px;color:var(--tx);font-weight:600;font-size:12.5px}
@@ -390,6 +441,23 @@ header h1.dlbl .dicon svg{width:21px;height:21px}
 .mealinfo{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
 .mealinfo b{font-size:15px;font-weight:600}
 .mealinfo span{font-size:12.5px;color:var(--mut)}
+/* شرائح العناصر داخل بطاقة الوجبة */
+.mmac{display:flex;flex-wrap:wrap;gap:5px;margin-top:2px}
+.mmac em{font-style:normal;font-size:10.5px;font-weight:600;color:var(--mut);
+  background:var(--soft);border-radius:99px;padding:3px 8px;white-space:nowrap}
+.mmac em.kcal{color:var(--acc);background:color-mix(in srgb,var(--acc) 13%,transparent)}
+
+/* أشرطة العناصر الغذائية مقابل الهدف */
+.macros{display:flex;flex-direction:column;gap:12px;border:1px solid var(--line);border-radius:var(--r);
+  padding:15px 16px;background:var(--card);box-shadow:var(--sh)}
+.macro .mtop{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+.macro em{font-style:normal;font-size:13px;color:var(--mut);font-weight:600}
+.macro b{font-size:15.5px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--c)}
+.macro b i{font-style:normal;font-size:11.5px;font-weight:600;color:var(--mut)}
+.macro u{display:block;text-decoration:none;height:7px;border-radius:99px;background:var(--soft);margin-top:7px;overflow:hidden}
+.macro s{display:block;height:100%;border-radius:99px;text-decoration:none;background:var(--c);
+  transition:width .5s cubic-bezier(.3,1.2,.5,1)}
+.cmpline.sub2{font-size:12px;opacity:.85;margin-top:2px}
 .mealinfo time{font-size:11px;color:var(--mut);font-variant-numeric:tabular-nums;direction:ltr;display:block;text-align:right}
 .mealcard.pend{opacity:.55}
 .rrow.daypick{cursor:pointer}
