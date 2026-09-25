@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>تماريني</title>
-<meta name="theme-color" content="#f4f5f8" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#0a0c11" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#f3f5f1" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0a0d09" media="(prefers-color-scheme: dark)">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="تماريني">
@@ -21,29 +21,37 @@
 @font-face{font-family:'Plex Arabic';font-style:normal;font-weight:700;font-display:swap;src:url(fonts/plex-arabic-700.woff2) format('woff2');unicode-range:U+0600-06FF, U+0750-077F, U+0870-088E, U+0890-0891, U+0897-08E1, U+08E3-08FF, U+200C-200E, U+2010-2011, U+204F, U+2E41, U+FB50-FDFF, U+FE70-FE74, U+FE76-FEFC, U+102E0-102FB, U+10E60-10E7E, U+10EC2-10EC4, U+10EFC-10EFF, U+1EE00-1EE03, U+1EE05-1EE1F, U+1EE21-1EE22, U+1EE24, U+1EE27, U+1EE29-1EE32, U+1EE34-1EE37, U+1EE39, U+1EE3B, U+1EE42, U+1EE47, U+1EE49, U+1EE4B, U+1EE4D-1EE4F, U+1EE51-1EE52, U+1EE54, U+1EE57, U+1EE59, U+1EE5B, U+1EE5D, U+1EE5F, U+1EE61-1EE62, U+1EE64, U+1EE67-1EE6A, U+1EE6C-1EE72, U+1EE74-1EE77, U+1EE79-1EE7C, U+1EE7E, U+1EE80-1EE89, U+1EE8B-1EE9B, U+1EEA1-1EEA3, U+1EEA5-1EEA9, U+1EEAB-1EEBB, U+1EEF0-1EEF1}
 @font-face{font-family:'Plex Arabic';font-style:normal;font-weight:700;font-display:swap;src:url(fonts/plex-latin-700.woff2) format('woff2');unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD}
 :root{
-  /* خلفية رمادية فاتحة والبطاقات بيضا فوقها — عشان يبان عمق بدل سطح أبيض واحد */
-  --bg:#f4f5f8; --tx:#0f1422; --mut:#6b7280; --line:#e3e6ec; --soft:#eef0f4;
-  --acc:#2b5cff; --acc-fg:#ffffff;         /* اللون التوقيعي: أزرق كهربائي */
-  --good:#12a150; --warn:#c2740b;          /* دلالات: تطوّر / انتبه */
-  --food:#0d9488;                          /* لون ميزة الأكل */
-  --d1:#e0393b; --d2:#7c3aed; --d3:#d97706; --d4:#0f9d58;  /* لون كل يوم تمرين */
-  --vio:#7c3aed; --navbg:rgba(255,255,255,.82); --navon:var(--acc);  /* الشريط السفلي العائم */
+  /* هوية رياضية: أخضر ليموني كهربائي بدل الأزرق، على أساس رمادي دافئ */
+  --bg:#f3f5f1; --tx:#131711; --mut:#6a7065; --line:#e2e6dd; --soft:#eaeee6;
+  --acc:#3f7d12; --accf:#c2f04b; --acc-fg:#16240a;   /* نص اللون التوقيعي / تعبئته / النص فوقه */
+  --good:#2e8b2e; --warn:#b4700a;          /* دلالات: تطوّر / انتبه */
+  --food:#0f9488;                          /* لون ميزة الأكل */
+  --d1:#e2483f; --d2:#7f56e0; --d3:#d08700; --d4:#0f9d63;  /* لون كل يوم تمرين */
+  --vio:#12a594; --navbg:rgba(255,255,255,.84); --navon:var(--acc);  /* الشريط السفلي العائم */
   --r:18px;                                     /* انحناء موحّد لكل البطاقات */
   --card:#ffffff;                               /* خلفية البطاقة */
   --sh:0 1px 2px rgba(16,24,40,.05), 0 12px 28px -22px rgba(16,24,40,.45);   /* ظل ناعم */
 }
 @media (prefers-color-scheme: dark){
-  /* غامق بميلان أزرق خفيف بدل الأسود الميت، وطبقة بطاقة أفتح منه */
-  :root{ --bg:#0a0c11; --tx:#eef1f6; --mut:#8b93a3; --line:#20242e; --soft:#161a22;
-    --acc:#4d7dff;
-    --good:#3ddc84; --warn:#fbbf24; --food:#2dd4bf;
+  /* غامق بميلان زيتوني خفيف، والليموني يضوي فوقه */
+  :root{ --bg:#0a0d09; --tx:#eef2e9; --mut:#8d958a; --line:#212619; --soft:#161a12;
+    --acc:#c2f04b; --accf:#c2f04b; --acc-fg:#101806;
+    --good:#4ade80; --warn:#fbbf24; --food:#2dd4bf;
     --d1:#fb7185; --d2:#a78bfa; --d3:#fbbf24; --d4:#34d399;
-    --vio:#a78bfa; --navbg:rgba(18,21,28,.8); --navon:#ffffff;
-    --card:#131722; --sh:0 1px 0 rgba(255,255,255,.04) inset, 0 16px 34px -26px #000;
+    --vio:#2ee6b6; --navbg:rgba(17,21,15,.82); --navon:#ffffff;
+    --card:#131811; --sh:0 1px 0 rgba(255,255,255,.04) inset, 0 16px 34px -26px #000;
   }
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;padding:0}
+/* توهّج ناعم بلون الهوية خلف أعلى الشاشة + حبيبات خفيفة جداً تكسر الفراغ المسطّح */
+body::before{content:'';position:fixed;inset:0 0 auto;height:420px;pointer-events:none;z-index:0;
+  background:
+    radial-gradient(70% 55% at 78% -8%, color-mix(in srgb,var(--acc) 22%,transparent), transparent 70%),
+    radial-gradient(60% 50% at 12% -12%, color-mix(in srgb,var(--vio) 16%,transparent), transparent 72%)}
+body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;opacity:.035;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)'/%3E%3C/svg%3E")}
+#app{position:relative;z-index:1}   /* الشريط والمؤقّت والتوست ثابتين أصلاً وz-index أعلى */
 body{
   background:var(--bg); color:var(--tx);
   font-family:'Plex Arabic',"Segoe UI",Tahoma,-apple-system,"Helvetica Neue",Arial,sans-serif;
@@ -88,7 +96,7 @@ header .streak{color:var(--acc);font-weight:600}
 .ctx{color:var(--mut);font-size:13.5px;border:1px solid var(--line);border-radius:9px;padding:8px 13px;margin-bottom:4px}
 .chat{display:flex;flex-direction:column;gap:12px;margin:18px 0 8px;min-height:40vh}
 .m{max-width:88%;padding:11px 15px;border-radius:15px;font-size:15px;line-height:1.75;word-wrap:break-word}
-.m.me{align-self:flex-start;background:var(--acc);color:var(--acc-fg);border-bottom-right-radius:4px}
+.m.me{align-self:flex-start;background:var(--accf);color:var(--acc-fg);border-bottom-right-radius:4px}
 .m.ai{align-self:flex-end;background:var(--soft);border:1px solid var(--line);border-bottom-left-radius:4px}
 .m.pend{opacity:.55}
 .m img{width:100%;max-width:210px;border-radius:9px;margin-bottom:7px;display:block}
@@ -113,7 +121,7 @@ header .streak{color:var(--acc);font-weight:600}
   border-radius:22px;padding:12px 17px;font-size:15px}
 .askbar button{width:44px;height:44px;flex:none;border-radius:50%;border:1px solid var(--line);
   background:none;display:grid;place-items:center;color:var(--tx)}
-.askbar button.send{background:var(--acc);color:var(--acc-fg);border-color:var(--acc)}
+.askbar button.send{background:var(--accf);color:var(--acc-fg);border-color:var(--accf)}
 .keyin{width:100%;background:var(--soft);border:1px solid var(--line);border-radius:10px;
   padding:13px 15px;font-size:15px;direction:ltr;text-align:left;margin-top:6px}
 .askbtn{margin-top:0;margin-bottom:22px}
@@ -247,7 +255,7 @@ header h1.dlbl .dicon svg{width:21px;height:21px}
 
 /* ---------- أزرار ---------- */
 .btn{display:block;width:100%;color:var(--acc-fg);border:0;
-  background:linear-gradient(135deg,var(--acc),color-mix(in srgb,var(--vio) 60%,var(--acc)));
+  background:linear-gradient(135deg,var(--accf),color-mix(in srgb,var(--vio) 55%,var(--accf)));
   box-shadow:0 10px 24px -12px color-mix(in srgb,var(--acc) 85%,transparent);
   border-radius:14px;padding:17px;font-size:17px;font-weight:650;margin-top:28px;
   transition:transform .15s ease, box-shadow .15s ease, opacity .15s ease}
@@ -397,7 +405,7 @@ header h1.dlbl .dicon svg{width:21px;height:21px}
   box-shadow:0 12px 28px -12px rgba(0,0,0,.5);
   transition:.22s cubic-bezier(.3,1.3,.5,1);pointer-events:none;max-width:88vw;text-align:center}
 #msg.show{opacity:1;transform:translate(-50%,0)}
-#msg.pr{background:var(--acc);color:var(--acc-fg)}
+#msg.pr{background:var(--accf);color:var(--acc-fg)}
 
 /* ---------- شريط التنقل السفلي: عائم، زجاجي، بحدّ متوهّج ومؤشّر منزلق ---------- */
 #tabbar{position:fixed;z-index:15;display:flex;left:50%;transform:translateX(-50%);

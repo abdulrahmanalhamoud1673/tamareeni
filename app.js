@@ -1237,7 +1237,7 @@ function ringSVG(pct) {
   const r = 42, c = Math.round(2 * Math.PI * r);
   const off = Math.round(c * (1 - Math.min(1, pct / 100)));
   // تدرّج لوني بدل لون مسطّح — أخضر/فيروزي وأنت تحت الهدف، كهرماني لما تتجاوزه
-  const [a, b] = pct > 100 ? ['var(--warn)', 'var(--d1)'] : ['var(--food)', 'var(--acc)'];
+  const [a, b] = pct > 100 ? ['var(--warn)', 'var(--d1)'] : ['var(--food)', 'var(--accf)'];
   return `<svg viewBox="0 0 100 100" class="calring">
     <defs><linearGradient id="ringg" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0" stop-color="${a}"/><stop offset="1" stop-color="${b}"/></linearGradient></defs>
