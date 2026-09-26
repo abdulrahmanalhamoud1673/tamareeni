@@ -315,7 +315,10 @@ const KEY = 'tamareeni';
 let S = Object.assign({ sessions: [], active: null, notes: {}, body: [], diet: null, meals: [] },
                       JSON.parse(localStorage.getItem(KEY) || '{}'));
 // الصور تُعرض أثناء الجلسة فقط ولا تُخزَّن (حتى لا تمتلئ ذاكرة المتصفح)
-const save = () => localStorage.setItem(KEY, JSON.stringify(S, (k, v) => k === '_img' ? undefined : v));
+const save = () => {
+  localStorage.setItem(KEY, JSON.stringify(S, (k, v) => k === '_img' ? undefined : v));
+  if (typeof mirrorState === 'function') mirrorState();
+};
 
 /* ===== أدوات ===== */
 const $ = s => document.querySelector(s);
@@ -1224,7 +1227,6 @@ const more = n => n > 0 ? `<div class="rrow mor">و${n} ${n === 1 ? 'تمرين'
    وGitHub Actions بيفحص كل شوي وبيبعث. كل الحساب بيصير هناك عشان يوصلك
    التنبيه حتى لو التطبيق مسكّر والشاشة مطفية. */
 const VAPID_PUB = 'BJ3fRtsNnxcu9mty1rLUbZoJwWnKo51dlzBUWqdAF9Yjd1odQyV7I2FSF125uWG__wdqp2TRU0V9v_LRIFlQX7I';
-const PUSH_STORE = '';        // رابط المخزن — يُملأ لما يجهز
 const NOTIF_DEF = { on: false, daily: '07:00', lead: 45, favs: [] };
 const notif = () => (S.notif = Object.assign({}, NOTIF_DEF, S.notif));
 
@@ -1255,22 +1257,29 @@ const devId = () => {
   return id;
 };
 
+// مرآة صغيرة بالكاش يقراها الـ service worker لحظة وصول التنبيه.
+// ليش: السيرفر عنده نسخة قديمة من تفضيلاتك، بس "تمرين اليوم المقترح" بيتغيّر
+// كل ما تخلّص تمرين — فالموبايل بيعيد كتابة نص الرسالة من بياناتك الطازة.
+const STATE_CACHE = 'tamareeni-state';
+const STATE_URL = './_prefs.json';
+async function mirrorState() {
+  if (!('caches' in window)) return;
+  try {
+    const n = notif();
+    const c = await caches.open(STATE_CACHE);
+    await c.put(new Request(STATE_URL), new Response(JSON.stringify({
+      next: nextDayName(), favs: n.favs, daily: n.daily, lead: n.lead, at: Date.now(),
+    }), { headers: { 'content-type': 'application/json' } }));
+  } catch (e) { /* ما بتفرق */ }
+}
+
+// شو بعتنا للسيرفر آخر مرة — عشان نعرف إذا تفضيلاتك تغيّرت وصار لازم ترمز من جديد
+const prefStamp = () => { const n = notif(); return JSON.stringify([n.daily, n.lead, [...n.favs].sort()]); };
+const prefsDrifted = () => notif().on && notif().shared && notif().shared !== prefStamp();
+
 let pushBusy = false;
 // يرفع (أو يشيل) تسجيل هذا الجهاز بالمخزن
-async function pushSync(remove) {
-  const n = notif();
-  if (!PUSH_STORE || (!n.on && !remove)) return;
-  const url = PUSH_STORE + '/devices/' + devId() + '.json';
-  try {
-    if (remove) { await fetch(url, { method: 'DELETE' }); return; }
-    const reg = await navigator.serviceWorker.ready;
-    const sub = await reg.pushManager.getSubscription();
-    if (!sub) return;
-    await fetch(url, { method: 'PUT', headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ sub: sub.toJSON(), tz: 'Asia/Amman', daily: n.daily, lead: n.lead,
-                             favs: n.favs, next: nextDayName(), at: Date.now() }) });
-  } catch (e) { /* ما في نت — بينزبط بالفتحة الجاية */ }
-}
+const pushSync = () => mirrorState();   // التفضيلات بتنحفظ محلياً، والسيرفر بياخدها بالرمز
 
 async function pushOn() {
   if (!('Notification' in window) || !('serviceWorker' in navigator) || !('PushManager' in window))
@@ -1292,8 +1301,7 @@ async function pushOn() {
 }
 
 async function pushOff() {
-  notif().on = false; save();
-  await pushSync(true);
+  const n = notif(); n.on = false; n.shared = null; save();
   try {
     const reg = await navigator.serviceWorker.ready;
     const sub = await reg.pushManager.getSubscription();
@@ -1311,6 +1319,7 @@ async function pushCode() {
     const n = notif();
     const code = JSON.stringify({ sub: sub.toJSON(), tz: 'Asia/Amman', daily: n.daily,
                                   lead: n.lead, favs: n.favs, next: nextDayName() });
+    notif().shared = prefStamp(); save();
     if (navigator.share) { await navigator.share({ title: 'رمز تنبيهات تماريني', text: code }); return; }
     await navigator.clipboard.writeText(code);
     msg('انتسخ الرمز');
@@ -1345,12 +1354,15 @@ function notifPage() {
 
   $('#app').innerHTML = `
   ${head('bell', 'التنبيهات', `<button class="link" onclick="go('home')">رجوع</button>`,
-    n.on && PUSH_STORE ? 'شغّالة — بتوصلك حتى والتطبيق مسكّر'
+    n.on && n.shared && !prefsDrifted() ? 'شغّالة — بتوصلك حتى والتطبيق مسكّر'
     : n.on ? 'ناقصها خطوة وحدة بعد' : 'خليك على علم بتمرينك وحصصك')}
 
-  ${n.on && !PUSH_STORE ? `<div class="nnote">
-    السماح تم على هذا الجهاز، بس لسا الخادم ما بيعرف عنك. اضغط
-    <b>انسخ رمز هذا الجهاز</b> تحت وابعته لعبود مرة وحدة، وبعدها بتوصلك الرسايل لحالها.</div>` : ''}
+  ${n.on && !n.shared ? `<div class="nnote">
+    السماح تم على هذا الجهاز. ضلّت خطوة وحدة بس: اضغط <b>انسخ رمز هذا الجهاز</b> تحت
+    وابعته لعبود مرة وحدة، وبعدها بتوصلك الرسايل لحالها كل يوم.</div>`
+    : prefsDrifted() ? `<div class="nnote">
+    غيّرت حصصك أو أوقاتك بعد آخر مرة بعتّ الرمز. ابعت <b>رمز هذا الجهاز</b> من جديد
+    عشان التذكير يمشي على الجديد. (رسالة الصبح بتضل صح بأي حال.)</div>` : ''}
 
   <div class="nrow">
     <div class="ntxt"><b>تنبيهات التطبيق</b>

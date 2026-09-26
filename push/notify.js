@@ -22,7 +22,7 @@ const BRANCH = { GGA: 'عبدون', GGK: 'خلدا' };
 const WD_AR = ['الأحد', 'الاثنين', 'الثلاثا', 'الأربعا', 'الخميس', 'الجمعة', 'السبت'];
 
 // دقّة التشغيل مش مضمونة (كرون GitHub بيتأخّر)، فبنشتغل بنوافذ مش بلحظة
-const CLASS_EARLY = 25;   // ندّق حتى لو تأخّرنا لهون قبل الحصة
+const CLASS_EARLY = 40;   // لو الكرون تأخّر، بنظل ندّق حتى لو ضلّ للحصة شوي
 const CLASS_LATE = 5;     // أو تقدّمنا شوي
 const DAILY_WIN = 70;     // رسالة الصبح: ساعة وشوي بعد الوقت المطلوب
 
@@ -87,7 +87,7 @@ async function main() {
       jobs.push({ dev, key: `${dev.id}|${now.date}|daily`, payload: {
         title: `${WD_AR[now.wd]} — شو عندك اليوم`,
         body: bits.length ? bits.join(' · ') : 'ما في إشي مجدول اليوم — يوم راحة',
-        tag: 'daily',
+        tag: 'daily', kind: 'daily', live: 1,
       } });
     }
 
@@ -101,6 +101,8 @@ async function main() {
         title: `${p[3]} ${when}`,
         body: `${arTime(p[2])} · ${where}${p[4] ? ` · مع ${p[4]}` : ''}${next ? ` — وتمرينك اليوم ${next}` : ''}`,
         tag: `cls-${p[2]}`,
+        // live = الموبايل بيعيد كتابة النص من بياناتك الطازة، وهذا احتياطي إذا ما لقيها
+        kind: 'class', live: 1, at: p[2], name: p[3], where, coach: p[4] || '',
       } });
     }
   }

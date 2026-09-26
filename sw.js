@@ -1,4 +1,5 @@
-const CACHE = 'tamareeni-v53';
+const CACHE = 'tamareeni-v54';
+const STATE_CACHE = 'tamareeni-state';   // مرآة تفضيلاتك — ما بتتمسح مع تحديث النسخة
 const ASSETS = ['./', './index.html', './app.js', './manifest.json', './icon-192.png', './icon-512.png',
   './fonts/plex-arabic-400.woff2', './fonts/plex-latin-400.woff2',
   './fonts/plex-arabic-600.woff2', './fonts/plex-latin-600.woff2',
@@ -30,7 +31,7 @@ self.addEventListener('install', e => {
 
 self.addEventListener('activate', e => {
   e.waitUntil(caches.keys().then(keys =>
-    Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))
+    Promise.all(keys.filter(k => k !== CACHE && k !== STATE_CACHE).map(k => caches.delete(k)))
   ).then(() => self.clients.claim()));
 });
 
@@ -69,20 +70,69 @@ self.addEventListener('fetch', e => {
    الرسالة بتوصل من GitHub Actions حتى لو التطبيق مسكّر والشاشة مطفية.
    الجسم JSON: {title, body, tag, url}. وإذا وصلت رسالة فاضية (نادر)،
    بنعرض تنبيهاً عاماً بدل ما يعرض المتصفّح رسالته الجاهزة "تم تحديث الموقع". */
+const WD_AR = ['الأحد', 'الاثنين', 'الثلاثا', 'الأربعا', 'الخميس', 'الجمعة', 'السبت'];
+const pad2 = n => String(n).padStart(2, '0');
+const arTime = t => { const [h, m] = t.split(':').map(Number);
+  return `${h % 12 || 12}:${pad2(m)} ${h < 12 ? 'ص' : 'م'}`; };
+const toMin = t => { const [h, m] = t.split(':').map(Number); return h * 60 + m; };
+
+// الوقت بعمّان — التنبيه لازم يحكي بتوقيتك مهما كان الجهاز
+function ammanNow() {
+  const p = Object.fromEntries(new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Amman', hour: '2-digit', minute: '2-digit', hour12: false, weekday: 'short',
+  }).formatToParts(new Date()).map(x => [x.type, x.value]));
+  return { min: (Number(p.hour) % 24) * 60 + Number(p.minute),
+           wd: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].indexOf(p.weekday) };
+}
+
+const readState = () => caches.open(STATE_CACHE)
+  .then(c => c.match('./_prefs.json')).then(r => r && r.json()).catch(() => null);
+
+// السيرفر بيبعث نصاً جاهزاً كاحتياطي، بس نسخته من "تمرين اليوم" ممكن تكون قديمة —
+// فإذا لقينا بيانات الجهاز، منعيد كتابة الرسالة منها.
+async function compose(d) {
+  if (!d.live) return d;
+  const st = await readState();
+  if (!st) return d;
+  const now = ammanNow();
+  const favs = (st.favs || []).map(k => String(k).split('|'))
+    .filter(p => p.length >= 4 && Number(p[1]) === now.wd)
+    .sort((a, b) => toMin(a[2]) - toMin(b[2]));
+
+  if (d.kind === 'daily') {
+    const bits = [];
+    if (st.next) bits.push(`تمرينك: ${st.next}`);
+    if (favs.length) bits.push('حصصك: ' + favs.map(p => `${p[3]} ${arTime(p[2])}`).join('، '));
+    return { ...d, title: `${WD_AR[now.wd]} — شو عندك اليوم`,
+             body: bits.length ? bits.join(' · ') : 'ما في إشي مجدول اليوم — يوم راحة' };
+  }
+  if (d.kind === 'class' && d.at) {
+    const left = toMin(d.at) - now.min;
+    const when = left <= 0 ? 'هلأ' : left === 1 ? 'بعد دقيقة' : `بعد ${left} دقيقة`;
+    return { ...d, title: `${d.name || 'حصتك'} ${when}`,
+             body: `${arTime(d.at)}${d.where ? ` · ${d.where}` : ''}${d.coach ? ` · مع ${d.coach}` : ''}`
+                   + (st.next ? ` — وتمرينك اليوم ${st.next}` : '') };
+  }
+  return d;
+}
+
 self.addEventListener('push', e => {
-  let d = {};
-  try { d = e.data ? e.data.json() : {}; } catch (err) { d = { body: e.data && e.data.text() }; }
-  e.waitUntil(self.registration.showNotification(d.title || 'تماريني', {
-    body: d.body || 'افتح التطبيق',
-    icon: './icon-192.png',
-    badge: './icon-192.png',
-    tag: d.tag || 'tamareeni',
-    dir: 'rtl',
-    lang: 'ar',
-    renotify: !!d.tag,
-    vibrate: [80, 50, 80],
-    data: { url: d.url || './index.html' },
-  }));
+  e.waitUntil((async () => {
+    let d = {};
+    try { d = e.data ? e.data.json() : {}; } catch (err) { d = { body: e.data && e.data.text() }; }
+    try { d = await compose(d); } catch (err) { /* منعرض نسخة السيرفر */ }
+    return self.registration.showNotification(d.title || 'تماريني', {
+      body: d.body || 'افتح التطبيق',
+      icon: './icon-192.png',
+      badge: './icon-192.png',
+      tag: d.tag || 'tamareeni',
+      dir: 'rtl',
+      lang: 'ar',
+      renotify: !!d.tag,
+      vibrate: [80, 50, 80],
+      data: { url: d.url || './index.html' },
+    });
+  })());
 });
 
 self.addEventListener('notificationclick', e => {
