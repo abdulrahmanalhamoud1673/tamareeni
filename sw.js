@@ -1,4 +1,4 @@
-const CACHE = 'tamareeni-v52';
+const CACHE = 'tamareeni-v53';
 const ASSETS = ['./', './index.html', './app.js', './manifest.json', './icon-192.png', './icon-512.png',
   './fonts/plex-arabic-400.woff2', './fonts/plex-latin-400.woff2',
   './fonts/plex-arabic-600.woff2', './fonts/plex-latin-600.woff2',
@@ -63,4 +63,34 @@ self.addEventListener('fetch', e => {
       return res;
     }))
   );
+});
+
+/* ===== التنبيهات =====
+   الرسالة بتوصل من GitHub Actions حتى لو التطبيق مسكّر والشاشة مطفية.
+   الجسم JSON: {title, body, tag, url}. وإذا وصلت رسالة فاضية (نادر)،
+   بنعرض تنبيهاً عاماً بدل ما يعرض المتصفّح رسالته الجاهزة "تم تحديث الموقع". */
+self.addEventListener('push', e => {
+  let d = {};
+  try { d = e.data ? e.data.json() : {}; } catch (err) { d = { body: e.data && e.data.text() }; }
+  e.waitUntil(self.registration.showNotification(d.title || 'تماريني', {
+    body: d.body || 'افتح التطبيق',
+    icon: './icon-192.png',
+    badge: './icon-192.png',
+    tag: d.tag || 'tamareeni',
+    dir: 'rtl',
+    lang: 'ar',
+    renotify: !!d.tag,
+    vibrate: [80, 50, 80],
+    data: { url: d.url || './index.html' },
+  }));
+});
+
+self.addEventListener('notificationclick', e => {
+  e.notification.close();
+  const target = new URL((e.notification.data && e.notification.data.url) || './index.html', self.location.href).href;
+  e.waitUntil(clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
+    // إذا التطبيق مفتوح أصلاً، بنرجّعه للواجهة بدل ما نفتح نسخة ثانية
+    for (const c of list) if (c.url.startsWith(self.location.origin) && 'focus' in c) return c.focus();
+    return clients.openWindow(target);
+  }));
 });

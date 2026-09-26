@@ -131,6 +131,8 @@ const ICON = {
   home: TABS[0][1], food: TABS[1][1], body: TABS[2][1], report: TABS[3][1], ask: TABS[4][1],
   log: `<svg viewBox="0 0 24 24" ${ICON_S}><rect x="3.5" y="5" width="17" height="15.5" rx="3"/><path d="M8 3v4M16 3v4M3.5 10h17"/><circle cx="8.5" cy="14" r=".9" fill="currentColor" stroke="none"/><circle cx="12" cy="14" r=".9" fill="currentColor" stroke="none"/><circle cx="15.5" cy="14" r=".9" fill="currentColor" stroke="none"/></svg>`,
   classes: `<svg viewBox="0 0 24 24" ${ICON_S}><rect x="3" y="4.5" width="18" height="16" rx="3.2"/><path d="M3 9.5h18M8 3v3M16 3v3"/><path d="M7.5 13.5h4M7.5 16.5h9"/></svg>`,
+  bell: `<svg viewBox="0 0 24 24" ${ICON_S}><path d="M18 9.5a6 6 0 10-12 0c0 5-2 6.5-2 6.5h16s-2-1.5-2-6.5z"/><path d="M13.7 19.5a2 2 0 01-3.4 0"/></svg>`,
+  star: `<svg viewBox="0 0 24 24" ${ICON_S}><path d="M12 3.6l2.6 5.3 5.9.85-4.25 4.15 1 5.85L12 16.95 6.75 19.7l1-5.85L3.5 9.75l5.9-.85z"/></svg>`,
   records: `<svg viewBox="0 0 24 24" ${ICON_S}><path d="M7.5 4h9v5.2a4.5 4.5 0 0 1-9 0z"/><path d="M7.5 5.6H5.2a2.6 2.6 0 0 0 2.5 4.2"/><path d="M16.5 5.6h2.3a2.6 2.6 0 0 1-2.5 4.2"/><path d="M12 13.7V17M9.5 20h5M10.5 17h3"/></svg>`,
 };
 // ترويسة موحّدة لكل الصفحات: أيقونة ملوّنة + عنوان + سطر فرعي اختياري + أزرار
@@ -559,10 +561,10 @@ let page = 'home';
 // إعادة الرسم تحافظ على موضعك في الصفحة. مرّر true فقط عند الانتقال لشاشة أخرى.
 function render(toTop) {
   const y = window.scrollY;
-  const OVERLAY = ['ask', 'report', 'body', 'food', 'records', 'classes'];   // شاشات تُعرض حتى لو في تمرين شغّال
+  const OVERLAY = ['ask', 'report', 'body', 'food', 'records', 'classes', 'notif'];   // شاشات تُعرض حتى لو في تمرين شغّال
   const active = S.active && !OVERLAY.includes(page) ? 'workout' : page;
   const app = $('#app');
-  ({ home, workout, log, ask, report, body, food, records, classes }[active])();
+  ({ home, workout, log, ask, report, body, food, records, classes, notif: notifPage }[active])();
   renderTabs(active);
   window.scrollTo(0, toTop ? 0 : y);
   // حركة دخول خفيفة عند الانتقال لشاشة جديدة فقط — مش مع كل تحديث داخلي
@@ -604,7 +606,9 @@ function home() {
 
   $('#app').innerHTML = `
   ${head('home', 'تماريني',
-    `<div class="hlinks"><button class="link" onclick="go('log')">السجل</button></div>`,
+    `<div class="hlinks">
+       <button class="link iconbtn${notif().on ? ' on' : ''}" onclick="go('notif')" aria-label="التنبيهات">${ICON.bell}</button>
+       <button class="link" onclick="go('log')">السجل</button></div>`,
     streak ? `<span class="streak">${plur(streak, 'أسبوع واحد', 'أسبوعين', 'أسابيع', 'أسبوعاً')} متتالي بلا انقطاع</span>` : 'كل تمرين بيتسجّل هون')}
 
   ${(() => {   // بطاقة رئيسية ليوم البرنامج التالي — أوضح خطوة تعملها اليوم
@@ -1214,6 +1218,180 @@ const lbl2 = (ic, t, extra = '') => `<div class="lbl"><span class="lbi">${ic}</s
 // سطر "وفي كمان..." تحت أي قائمة مقصوصة
 const more = n => n > 0 ? `<div class="rrow mor">و${n} ${n === 1 ? 'تمرين' : n === 2 ? 'تمرينان' : n <= 10 ? 'تمارين' : 'تمريناً'} كمان</div>` : '';
 
+/* ===== التنبيهات =====
+   الفكرة: الموبايل ما بقدر يجدول تنبيه لحاله وهو مسكّر، فالتنبيه لازم ييجي من
+   برّا (Web Push). الجهاز بيسجّل اشتراكه + شو بده يتنبّه عليه بمخزن صغير،
+   وGitHub Actions بيفحص كل شوي وبيبعث. كل الحساب بيصير هناك عشان يوصلك
+   التنبيه حتى لو التطبيق مسكّر والشاشة مطفية. */
+const VAPID_PUB = 'BJ3fRtsNnxcu9mty1rLUbZoJwWnKo51dlzBUWqdAF9Yjd1odQyV7I2FSF125uWG__wdqp2TRU0V9v_LRIFlQX7I';
+const PUSH_STORE = '';        // رابط المخزن — يُملأ لما يجهز
+const NOTIF_DEF = { on: false, daily: '07:00', lead: 45, favs: [] };
+const notif = () => (S.notif = Object.assign({}, NOTIF_DEF, S.notif));
+
+// مفتاح الحصة المفضّلة: فرع|يوم|وقت|اسم|مدرّب — فيه كل اللي بده الخادم يبني فيه الرسالة
+const favKey = (br, c) => [br, c[0], c[1], c[2], c[3]].join('|');
+const isFav = (br, c) => notif().favs.includes(favKey(br, c));
+function toggleFav(key) {
+  const f = notif().favs, i = f.indexOf(key);
+  if (i >= 0) f.splice(i, 1); else f.push(key);
+  buzz(8); save(); pushSync(); render();
+  msg(i >= 0 ? 'شيلتها من المفضّلة' : 'رح أذكّرك فيها');
+}
+
+// اسم يوم البرنامج الجاي — الخادم ما بيعرف جلساتك، فبنبعتله الخلاصة جاهزة
+function nextDayName() {
+  const prog = S.sessions.filter(s => PROGRAM[s.day]);
+  const last = prog.length ? prog[prog.length - 1].day : null;
+  const keys = Object.keys(PROGRAM);
+  return PROGRAM[last ? keys[(keys.indexOf(last) + 1) % keys.length] : keys[0]].name;
+}
+
+const devId = () => {
+  let id = localStorage.getItem('tamareeni_dev');
+  if (!id) {
+    id = 'd' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
+    localStorage.setItem('tamareeni_dev', id);
+  }
+  return id;
+};
+
+let pushBusy = false;
+// يرفع (أو يشيل) تسجيل هذا الجهاز بالمخزن
+async function pushSync(remove) {
+  const n = notif();
+  if (!PUSH_STORE || (!n.on && !remove)) return;
+  const url = PUSH_STORE + '/devices/' + devId() + '.json';
+  try {
+    if (remove) { await fetch(url, { method: 'DELETE' }); return; }
+    const reg = await navigator.serviceWorker.ready;
+    const sub = await reg.pushManager.getSubscription();
+    if (!sub) return;
+    await fetch(url, { method: 'PUT', headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ sub: sub.toJSON(), tz: 'Asia/Amman', daily: n.daily, lead: n.lead,
+                             favs: n.favs, next: nextDayName(), at: Date.now() }) });
+  } catch (e) { /* ما في نت — بينزبط بالفتحة الجاية */ }
+}
+
+async function pushOn() {
+  if (!('Notification' in window) || !('serviceWorker' in navigator) || !('PushManager' in window))
+    return msg('متصفّحك ما بيدعم التنبيهات');
+  pushBusy = true; render();
+  try {
+    if (await Notification.requestPermission() !== 'granted')
+      return msg('لازم تسمح بالتنبيهات');
+    const reg = await navigator.serviceWorker.ready;
+    const sub = await reg.pushManager.getSubscription()
+      || await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: VAPID_PUB });
+    if (!sub) return msg('ما زبط الاشتراك');
+    notif().on = true; save();
+    await pushSync();
+    buzz(20); msg('تم تفعيل التنبيهات');
+  } catch (e) {
+    msg('ما زبط التفعيل: ' + (e && e.message ? e.message.slice(0, 40) : 'خطأ'));
+  } finally { pushBusy = false; render(); }
+}
+
+async function pushOff() {
+  notif().on = false; save();
+  await pushSync(true);
+  try {
+    const reg = await navigator.serviceWorker.ready;
+    const sub = await reg.pushManager.getSubscription();
+    if (sub) await sub.unsubscribe();
+  } catch (e) { /* ما بتفرق */ }
+  msg('وقّفت التنبيهات'); render();
+}
+
+// رمز هذا الجهاز — بينقرا مرة وحدة لتوصيل التنبيهات لما المخزن ما يكون جاهز
+async function pushCode() {
+  try {
+    const reg = await navigator.serviceWorker.ready;
+    const sub = await reg.pushManager.getSubscription();
+    if (!sub) return msg('فعّل التنبيهات أول');
+    const n = notif();
+    const code = JSON.stringify({ sub: sub.toJSON(), tz: 'Asia/Amman', daily: n.daily,
+                                  lead: n.lead, favs: n.favs, next: nextDayName() });
+    if (navigator.share) { await navigator.share({ title: 'رمز تنبيهات تماريني', text: code }); return; }
+    await navigator.clipboard.writeText(code);
+    msg('انتسخ الرمز');
+  } catch (e) { msg('ما قدرت أنسخه'); }
+}
+
+// تجربة فورية: بتتأكّد إنو التنبيه بيطلع على هذا الجهاز أصلاً
+async function pushTest() {
+  try {
+    const reg = await navigator.serviceWorker.ready;
+    const n = notif();
+    const ft = favToday();
+    await reg.showNotification('تماريني', {
+      body: 'اليوم عندك: ' + nextDayName() + (ft.length ? ' · وحصتك ' + ft[0][3] + ' ' + clsTime(ft[0][2]) : ''),
+      icon: './icon-192.png', badge: './icon-192.png', tag: 'tamareeni-test',
+      dir: 'rtl', lang: 'ar', data: { url: './index.html' },
+    });
+  } catch (e) { msg('ما قدرت أعرض التنبيه'); }
+}
+
+// حصص اليوم المفضّلة (بأي فرع) مرتّبة بالوقت
+const favToday = (wd) => notif().favs.map(k => k.split('|'))
+  .filter(p => +p[1] === (wd == null ? new Date().getDay() : wd))
+  .sort((a, b) => a[2] < b[2] ? -1 : 1);
+
+function notifPage() {
+  const n = notif();
+  const perm = 'Notification' in window ? Notification.permission : 'unsupported';
+  const blocked = perm === 'denied';
+  const byDay = {};
+  n.favs.map(k => k.split('|')).forEach(p => (byDay[p[1]] = byDay[p[1]] || []).push(p));
+
+  $('#app').innerHTML = `
+  ${head('bell', 'التنبيهات', `<button class="link" onclick="go('home')">رجوع</button>`,
+    n.on && PUSH_STORE ? 'شغّالة — بتوصلك حتى والتطبيق مسكّر'
+    : n.on ? 'ناقصها خطوة وحدة بعد' : 'خليك على علم بتمرينك وحصصك')}
+
+  ${n.on && !PUSH_STORE ? `<div class="nnote">
+    السماح تم على هذا الجهاز، بس لسا الخادم ما بيعرف عنك. اضغط
+    <b>انسخ رمز هذا الجهاز</b> تحت وابعته لعبود مرة وحدة، وبعدها بتوصلك الرسايل لحالها.</div>` : ''}
+
+  <div class="nrow">
+    <div class="ntxt"><b>تنبيهات التطبيق</b>
+      <em>${blocked ? 'المتصفّح مانعها — اسمح فيها من إعدادات الموقع'
+            : n.on ? 'مفعّلة على هذا الجهاز' : 'بتوصلك والشاشة مطفية'}</em></div>
+    <button class="nbtn${n.on ? ' off' : ''}" ${pushBusy || blocked ? 'disabled' : ''}
+      onclick="${n.on ? 'pushOff()' : 'pushOn()'}">${pushBusy ? '...' : n.on ? 'إيقاف' : 'فعّل'}</button>
+  </div>
+
+  <div class="lbl">رسالة الصبح</div>
+  <div class="nrow">
+    <div class="ntxt"><b>شو عندك اليوم</b><em>تمرين اليوم المقترح + حصصك المفضّلة</em></div>
+    <input type="time" class="ntime" value="${n.daily}"
+      onchange="notif().daily=this.value;save();pushSync();msg('تمام')">
+  </div>
+
+  <div class="lbl">ذكّرني قبل الحصة بـ</div>
+  <div class="seg">
+    ${[15, 30, 45, 60].map(m => `<button class="${m === n.lead ? 'on' : ''}"
+      onclick="notif().lead=${m};save();pushSync();render()">${m} د</button>`).join('')}
+  </div>
+
+  <div class="lbl">حصصي المفضّلة${n.favs.length ? `<span class="lbn">${n.favs.length}</span>` : ''}
+    <button class="lblbtn" onclick="clsDay=null;go('classes')">اختر من الجدول</button></div>
+  ${!n.favs.length ? `<div class="clnone">ما اخترت ولا حصة بعد — افتح الجدول وحطّ نجمة على اللي بتحبها</div>`
+    : Object.keys(byDay).sort().map(d => `<div class="nfday">${WD_AR[d]}</div>
+      <div class="clist">${byDay[d].sort((a, b) => a[2] < b[2] ? -1 : 1).map(p => `
+        <div class="crow" style="--c:${clsColor(p[3])}">
+          <span class="ctime">${clsTime(p[2])}</span>
+          <span class="cico">${clsIcon(p[3])}</span>
+          <span class="cmain"><b>${esc(p[3])}</b><em>${esc(p[4])} · ${BRANCH[p[0]] || p[0]}</em></span>
+          <button class="cstar on" onclick="toggleFav('${p.join('|')}')"
+            aria-label="شيلها من المفضّلة">${ICON.star}</button>
+        </div>`).join('')}</div>`).join('')}
+
+  ${n.on ? `<button class="btn quiet" onclick="pushTest()">جرّب تنبيه هلأ</button>
+  <button class="btn quiet" onclick="pushCode()">انسخ رمز هذا الجهاز</button>
+  <p class="muted sm">الرمز بس إذا طلبته منك — فيه اشتراك الجهاز عشان توصلك الرسايل.</p>` : ''}
+  `;
+}
+
 /* ===== صفحة الحصص ===== */
 let clsDay = null;                     // اليوم المعروض (ترقيم JS)، افتراضياً اليوم
 const WD_AR = ['الأحد', 'الاثنين', 'الثلاثا', 'الأربعا', 'الخميس', 'الجمعة', 'السبت'];
@@ -1272,6 +1450,8 @@ function classes() {
             <span class="ctime">${clsTime(c[1])}</span>
             <span class="cico">${clsIcon(c[2])}</span>
             <span class="cmain"><b>${esc(c[2])}</b><em>${esc(c[3])}</em></span>
+            <button class="cstar${isFav(br, c) ? ' on' : ''}" onclick="toggleFav('${favKey(br, c)}')"
+              aria-label="${isFav(br, c) ? 'شيلها من المفضّلة' : 'ذكّرني بهاي الحصة'}">${ICON.star}</button>
             <button class="cbtn" onclick="toggleClass('${br}','${key}','${ds}')"
               aria-label="${on ? 'إلغاء الحضور' : 'سجّل حضورك'}">${on ? '✓ حضرت' : 'سجّل'}</button>
           </div>`;
@@ -1279,7 +1459,8 @@ function classes() {
       </div>`;
     }).join('')}
 
-  <p class="muted sm" style="margin-top:14px">تسجيل الحضور بينحسب مع تمارينك: بيدخل بالسلسلة الأسبوعية وبالتقويم وبالتقرير.</p>
+  <p class="muted sm" style="margin-top:14px">النجمة = ذكّرني بهاي الحصة قبلها بشوي.
+    وتسجيل الحضور بينحسب مع تمارينك: بيدخل بالسلسلة الأسبوعية وبالتقويم وبالتقرير.</p>
   `;
 }
 

@@ -87,12 +87,13 @@ header .streak{color:var(--acc);font-weight:600}
   color:var(--acc);background:color-mix(in srgb,currentColor 13%,transparent)}
 .hicon svg{width:21px;height:21px;display:block}
 .hicon.food{color:var(--food)} .hicon.body{color:var(--d2)}
-.hicon.records{color:var(--d3)} .hicon.log{color:var(--mut)}
+.hicon.records{color:var(--d3)} .hicon.log{color:var(--mut)} .hicon.bell{color:var(--d3)}
 .link{background:none;border:0;color:var(--mut);font-size:15px;padding:6px 0}
 .link:active{color:var(--tx)}
 .hlinks{display:flex;gap:18px;align-items:center}
 .iconbtn{display:flex}
 .iconbtn svg{width:19px;height:19px;display:block}
+.iconbtn.on{color:var(--acc)}
 
 /* ---------- المساعد ---------- */
 .ctx{color:var(--mut);font-size:13.5px;border:1px solid var(--line);border-radius:9px;padding:8px 13px;margin-bottom:4px}
@@ -195,7 +196,7 @@ header .streak{color:var(--acc);font-weight:600}
 .daytabs button.on{background:var(--accf);color:var(--acc-fg);border-color:var(--accf)}
 /* صفوف الحصص */
 .clist{display:flex;flex-direction:column;gap:8px}
-.crow{display:flex;align-items:center;gap:12px;border:1px solid var(--line);border-radius:var(--r);
+.crow{display:flex;align-items:center;gap:10px;border:1px solid var(--line);border-radius:var(--r);
   border-inline-start:4px solid var(--c);background:var(--card);box-shadow:var(--sh);padding:12px 14px}
 .crow.on{background:color-mix(in srgb,var(--c) 9%,var(--card))}
 .ctime{flex:none;width:58px;font-size:12px;font-weight:700;color:var(--mut);font-variant-numeric:tabular-nums}
@@ -214,6 +215,13 @@ header .streak{color:var(--acc);font-weight:600}
   padding:7px 13px;font-size:11.5px;font-weight:700;transition:.2s}
 .crow.on .cbtn{background:var(--c);border-color:var(--c);color:#fff}
 .cbtn:active{transform:scale(.94)}
+/* نجمة "ذكّرني بهاي الحصة" */
+.cstar{flex:none;width:30px;height:30px;border:0;background:none;padding:0;border-radius:99px;
+  color:color-mix(in srgb,var(--mut) 55%,transparent);display:grid;place-items:center;transition:.2s}
+.cstar svg{width:19px;height:19px;display:block}
+.cstar.on{color:var(--d3)}
+.cstar.on svg{fill:color-mix(in srgb,var(--d3) 28%,transparent)}
+.cstar:active{transform:scale(.85)}
 /* إحصائيات الحصص */
 .clstats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}
 .clstats div{border:1px solid var(--line);border-radius:14px;background:var(--card);box-shadow:var(--sh);
@@ -231,6 +239,25 @@ header .streak{color:var(--acc);font-weight:600}
 .ccard.on{background:color-mix(in srgb,var(--c) 10%,var(--card))}
 .cdot{position:absolute;top:8px;inset-inline-start:9px;font-size:10px;font-weight:800;color:var(--c)}
 .clnone{color:var(--mut);font-size:13px;padding:6px 2px}
+
+/* ---------- صفحة التنبيهات ---------- */
+.nrow{display:flex;align-items:center;gap:12px;margin-top:10px;padding:14px 15px;
+  border:1px solid var(--line);border-radius:var(--r);background:var(--card);box-shadow:var(--sh)}
+.ntxt{flex:1;min-width:0}
+.ntxt b{display:block;font-size:15px;font-weight:650}
+.ntxt em{font-style:normal;display:block;margin-top:3px;font-size:12px;color:var(--mut);line-height:1.5}
+.nbtn{flex:none;border:0;border-radius:99px;padding:10px 20px;font-size:14px;font-weight:700;
+  color:var(--acc-fg);background:var(--accf);transition:transform .15s ease}
+.nbtn.off{background:none;border:1px solid var(--line);color:var(--mut);font-weight:400}
+.nbtn:active{transform:scale(.96)}
+.nbtn[disabled]{opacity:.5}
+.ntime{flex:none;border:1px solid var(--line);border-radius:12px;background:var(--soft);color:var(--tx);
+  padding:9px 12px;font:inherit;font-size:15px;font-weight:700;font-variant-numeric:tabular-nums}
+.nfday{margin:16px 0 8px;font-size:12.5px;font-weight:700;color:var(--mut)}
+.nnote{margin-top:10px;padding:13px 15px;border-radius:var(--r);font-size:13px;line-height:1.7;
+  color:var(--tx);border:1px dashed color-mix(in srgb,var(--warn) 55%,var(--line));
+  background:color-mix(in srgb,var(--warn) 8%,transparent)}
+.nnote b{color:var(--warn)}
 
 /* شريط آخر ٧ أيام: نقطة بلون تمرين ذاك اليوم */
 .week{display:flex;gap:6px}
