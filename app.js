@@ -240,6 +240,37 @@ const CLS = {
     [2,'17:15','SPRINT','AHMAD','cyc'], [3,'18:00','SPRINT','NASER','cyc'],
   ],
 };
+// أيقونة لكل نوع حصة — مرسومة بنفس أسلوب باقي أيقونات التطبيق، كل وحدة بمعنى حصتها
+const CI = {
+  bar:   `<path d="M6.5 9v6M4.5 10v4M17.5 9v6M19.5 10v4M9 12h6"/>`,                       // بار حديد
+  glove: `<path d="M6.5 8.5A3.5 3.5 0 0 1 10 5h4a4 4 0 0 1 4 4v3a4 4 0 0 1-4 4h-4a3.5 3.5 0 0 1-3.5-3.5z"/><path d="M6.5 10.5h-1a1.5 1.5 0 0 0 0 3h1"/><path d="M8.5 16v2.5A1.5 1.5 0 0 0 10 20h4a1.5 1.5 0 0 0 1.5-1.5V16"/>`,
+  run:   `<circle cx="14.5" cy="5" r="1.8"/><path d="M6 20.5l3.2-4.4 2.3-2.4-1-4.2-3 2.2-1.2 2.6"/><path d="M11.5 9.3 15 8.1l2.6 3 2.4.8"/><path d="m12.6 13.5 2.2 2.2.8 4.6"/>`,
+  lotus: `<circle cx="12" cy="6.3" r="2"/><path d="M12 9c-2 1.4-3.6 3.5-3.6 5.7 0 1.5 1.6 2.7 3.6 2.7s3.6-1.2 3.6-2.7c0-2.2-1.6-4.3-3.6-5.7z"/><path d="M4.5 18.6c2.2 1.5 5 2.1 7.5 2.1s5.3-.6 7.5-2.1"/>`,
+  bolt:  `<path d="M13.6 3 6.2 13.6h5L10.4 21l7.4-10.6h-5z"/>`,
+  core:  `<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3.2"/>`,
+  bike:  `<circle cx="6" cy="16.5" r="3.4"/><circle cx="18" cy="16.5" r="3.4"/><path d="M6 16.5 10.2 8H15l3 8.5M9.4 8h4.2l-3.4 8.5"/>`,
+  speed: `<path d="M4.4 17a7.6 7.6 0 1 1 15.2 0"/><path d="m12 17 4.2-6.8"/><circle cx="12" cy="17" r="1.1"/>`,
+  hill:  `<path d="M3 19.5h18L14.3 7l-3.1 5.6-2-2.6z"/><circle cx="17.2" cy="5.4" r="1.6"/>`,
+  note:  `<path d="M9.5 18V6.6l9-2V16"/><circle cx="7" cy="18" r="2.5"/><circle cx="16" cy="16" r="2.5"/>`,
+  timer: `<circle cx="12" cy="13.6" r="7"/><path d="M12 9.8v3.8l2.5 1.5M9.5 3.2h5M12 3.2v3.4"/>`,
+  flex:  `<circle cx="16" cy="4.8" r="1.8"/><path d="M16 7.6v4.2l-4 2.5v6M16 11.8l3 3.6M12 14.3 7 11.8l-2.5 3"/>`,
+  flame: `<path d="M12 3.4s4.6 4.1 4.6 8.2a4.6 4.6 0 1 1-9.2 0c0-1.7.8-3.1 1.7-4.1.2 1.2.9 2 1.7 2 1.3 0 1.7-1.4 1.2-6.1z"/>`,
+  jump:  `<circle cx="12" cy="4.4" r="1.8"/><path d="M12 6.8v5.4M8 9.4 12 7.8l4 1.6M9 19.6l3-5.2 3 5.2"/><path d="M4.5 20.4h15"/>`,
+  steps: `<path d="M4 19.5h4.5V15H13v-4.5h4.5V6H21"/>`,
+  star:  `<path d="M12 3.6l2.6 5.4 5.9.9-4.2 4.2 1 5.9L12 17.2 6.7 20l1-5.9L3.5 9.9l5.9-.9z"/>`,
+  heart: `<path d="M12 20.3s-7.2-4.5-7.2-9.3A4.1 4.1 0 0 1 12 8.2a4.1 4.1 0 0 1 7.2 2.8c0 4.8-7.2 9.3-7.2 9.3z"/>`,
+  legs:  `<path d="M9 4.2v7l-1.6 9M15 4.2v7l1.6 9M8.6 4.2h6.8"/>`,
+};
+const CLS_I = {
+  'BODYPUMP': 'bar', 'BODYCOMBAT': 'glove', 'BODYATTACK': 'run', 'ATHLATICS': 'run',
+  'BODYBALANCE': 'lotus', 'YOGA': 'lotus', 'GRIT': 'bolt', 'GRIT & CORE': 'bolt',
+  'CORE': 'core', 'RPM': 'bike', 'CYCLING': 'bike', 'SPRINT': 'speed', 'THE TRIP': 'hill',
+  'ZUMBA': 'note', 'CIRCUIT': 'timer', 'MOBILITY': 'flex', 'ULTIMATE BURN': 'flame',
+  'JUMPING': 'jump', 'FREE STYLE STEP': 'steps', "GOLD'S 1000": 'star',
+  'SENIOR ADULTS': 'heart', 'GLUTES BLAST': 'legs',
+};
+const clsIcon = n => `<svg viewBox="0 0 24 24" ${ICON_S}>${CI[CLS_I[n]] || CI.bar}</svg>`;
+
 const CLS_MIN = 45;                       // مدة الحصة التقريبية بالدقائق
 const clsKey = c => `${c[1]}|${c[2]}`;    // الوقت+الاسم يكفي لتمييز الحصة داخل اليوم
 const clsColor = n => CLS_C[n] || 'var(--acc)';
@@ -575,7 +606,8 @@ function home() {
         const on = clsDone(today(), clsKey(c)) >= 0;
         return `<button class="ccard${on ? ' on' : ''}" style="--c:${clsColor(c[2])}"
           onclick="clsDay=null;go('classes')">
-          <em>${clsTime(c[1])}</em><b>${esc(c[2])}</b><i>${esc(c[3])}</i>
+          <span class="ctop"><span class="cico">${clsIcon(c[2])}</span><em>${clsTime(c[1])}</em></span>
+          <b>${esc(c[2])}</b><i>${esc(c[3])}</i>
           ${on ? '<span class="cdot">✓</span>' : ''}</button>`;
       }).join('')}
     </div>`}`;
@@ -864,7 +896,7 @@ function log() {
       <div class="recrow">
         <button class="recmain" onclick="openRec=${openRec === i ? -1 : i};render()">
           <b class="dlbl"><span class="dicon" style="color:${s.cls ? clsColor(s.cls.name) : DAY_ACC[s.day] || 'var(--mut)'}">${
-            s.cls ? ICON.classes : DAY_ICON[s.day] || ''}</span>${
+            s.cls ? clsIcon(s.cls.name) : DAY_ICON[s.day] || ''}</span>${
             s.cls ? esc(s.cls.name) : PROGRAM[s.day] ? PROGRAM[s.day].name : s.day}</b>
           <time>${fmt(s.date)} · ${Math.max(1, Math.round((s.end - s.start) / 60000))} د</time>
         </button>
@@ -1159,6 +1191,7 @@ function classes() {
           const key = clsKey(c), on = clsDone(ds, key) >= 0;
           return `<div class="crow${on ? ' on' : ''}" style="--c:${clsColor(c[2])}">
             <span class="ctime">${clsTime(c[1])}</span>
+            <span class="cico">${clsIcon(c[2])}</span>
             <span class="cmain"><b>${esc(c[2])}</b><em>${esc(c[3])}</em></span>
             <button class="cbtn" onclick="toggleClass('${br}','${key}','${ds}')"
               aria-label="${on ? 'إلغاء الحضور' : 'سجّل حضورك'}">${on ? '✓ حضرت' : 'سجّل'}</button>
