@@ -471,6 +471,9 @@ function changes(d = 7) {
     else if (b.max === a.max && b.reps > a.reps) up.push({ id, from: a.reps, to: b.reps, reps: true });
     else if (b.max === a.max) flat.push({ id, at: b.max });
   }
+  // الأكبر تطوّراً أول (نسبةً لوزنه السابق، مش فرق مطلق — عشان تمرين خفيف
+  // زاد ٥ كيلو ما يضيع تحت تمرين ثقيل زاد ٥ كيلو)
+  up.sort((x, y) => (y.to - y.from) / y.from - (x.to - x.from) / x.from);
   return { up, flat };
 }
 // الرقم المستدير التالي الذي يستحق أن يكون هدفاً
@@ -981,24 +984,26 @@ function report() {
     })()}
   </div>
 
-  ${ch.up.length ? `<div class="lbl">⬆️ تطوّرت</div>
-  <div class="rlist">${ch.up.map(c => `<div class="rrow"><span>${esc(ex(c.id).ar)}</span>
-    <b class="good">${n1(c.from)} ← ${n1(c.to)} ${c.reps ? 'عدة' : exUnit(c.id)}</b></div>`).join('')}</div>` : ''}
+  ${ch.up.length ? lbl2(LBI.up, 'تطوّرت', `<span class="lbn">${ch.up.length}</span>`) + `
+  <div class="rlist">${ch.up.slice(0, 5).map(c => `<div class="rrow"><span>${esc(ex(c.id).ar)}</span>
+    <b class="good"><span>${n1(c.to)} ${c.reps ? 'عدة' : exUnit(c.id)}</span>
+      <i class="dlt">+${n1(Math.round((c.to - c.from) * 10) / 10)}</i></b></div>`).join('')}
+    ${more(ch.up.length - 5)}</div>` : ''}
 
-  ${ch.flat.length ? `<div class="lbl">⏸️ واقف مكانه</div>
-  <div class="rlist">${ch.flat.map(c => `<div class="rrow"><span>${esc(ex(c.id).ar)}</span>
-    <b class="warn">${n1(c.at)} ${exUnit(c.id)}</b></div>`).join('')}</div>` : ''}
+  ${ch.flat.length ? lbl2(LBI.pause, 'واقف مكانه', `<span class="lbn">${ch.flat.length}</span>`) + `
+  <div class="rlist">${ch.flat.slice(0, 5).map(c => `<div class="rrow"><span>${esc(ex(c.id).ar)}</span>
+    <b class="warn">${n1(c.at)} ${exUnit(c.id)}</b></div>`).join('')}
+    ${more(ch.flat.length - 5)}</div>` : ''}
 
-  ${pr.length ? `<div class="lbl">🎯 بهالمعدل، رح توصل</div>
-  <div class="rlist">${pr.map(x => `<div class="rrow proj">
+  ${pr.length ? lbl2(LBI.goal, 'بهالمعدل، رح توصل') + `
+  <div class="rlist">${pr.slice(0, 3).map(x => `<div class="rrow proj">
     <span>${esc(ex(x.id).ar)}</span>
     <b class="acc">${n1(x.p.goal)} كغم</b>
     <u>خلال ${x.p.weeks === 1 ? 'أسبوع' : x.p.weeks === 2 ? 'أسبوعين' : x.p.weeks + ' أسابيع'}
        · الآن ${n1(x.p.now)}</u></div>`).join('')}</div>
-  <p class="muted sm">التوقّع مبني على سرعة تطوّرك الفعلية. كل ما داومت، كل ما قرب.</p>`
-  : '<p class="muted sm">التوقّعات بتظهر بعد ٣ تمارين على الأقل لنفس التمرين.</p>'}
+  ` : ''}
 
-  <div class="lbl">🧠 تحليل المدرب</div>
+  ${lbl2(ICON.ask, 'تحليل المدرب')}
   ${rep ? `<div class="aibox">${fmtAi(rep.text)}<div class="raw2">${esc(fmt(rep.date))}</div></div>` : ''}
   <button class="btn ${rep ? 'quiet' : ''}" id="repBtn" onclick="makeReport()" ${repBusy ? 'disabled' : ''}>
     ${repBusy ? 'المدرب عم يقرأ أرقامك...' : rep ? 'حدّث التحليل' : 'اطلب تحليل المدرب'}</button>
@@ -1134,6 +1139,17 @@ function records() {
   </div>`).join('')}
   `;
 }
+
+// أيقونة صغيرة بجانب عنوان القسم بدل الإيموجي
+const LBI = {
+  up:    `<svg viewBox="0 0 24 24" ${ICON_S}><path d="M12 19V5M5.6 11.4 12 5l6.4 6.4"/></svg>`,
+  pause: `<svg viewBox="0 0 24 24" ${ICON_S}><path d="M9.5 5v14M14.5 5v14"/></svg>`,
+  goal:  `<svg viewBox="0 0 24 24" ${ICON_S}><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3.2"/></svg>`,
+  plate: `<svg viewBox="0 0 24 24" ${ICON_S}><path d="M7 3v6a1.6 1.6 0 1 0 3.2 0V3M8.6 9v12"/><path d="M15.5 3c-1.2.3-2 2-2 4.2 0 1.8.6 3 1.6 3.6V21"/></svg>`,
+};
+const lbl2 = (ic, t, extra = '') => `<div class="lbl"><span class="lbi">${ic}</span>${t}${extra}</div>`;
+// سطر "وفي كمان..." تحت أي قائمة مقصوصة
+const more = n => n > 0 ? `<div class="rrow mor">و${n} ${n === 1 ? 'تمرين' : n === 2 ? 'تمرينان' : n <= 10 ? 'تمارين' : 'تمريناً'} كمان</div>` : '';
 
 /* ===== صفحة الحصص ===== */
 let clsDay = null;                     // اليوم المعروض (ترقيم JS)، افتراضياً اليوم
@@ -1279,7 +1295,6 @@ function body() {
   </div>`}
   <input type="file" id="inbodyCam" accept="image/*" capture="environment" hidden onchange="attachInBody(this)">
   <input type="file" id="inbodyLib" accept="image/*" hidden onchange="attachInBody(this)">
-  ${!S.key ? '<p class="muted sm">بدّه تفعيل المساعد مرة وحدة من صفحة «اسأل».</p>' : ''}
 
   ${latest ? `
   <div class="lbl">آخر قياس — ${fmt(latest.date)}${latest.source === 'inbody' ? ' · InBody' : ''}</div>
@@ -1307,14 +1322,13 @@ function body() {
       </div>
     </div>`;
   })()}
-  <div class="rlist" style="margin-top:9px">
-    ${latest.bmi != null ? `<div class="rrow"><span>مؤشر كتلة الجسم</span><b>${n1(latest.bmi)}</b></div>` : ''}
-    ${latest.visceral != null ? `<div class="rrow"><span>الدهون الحشوية</span><b>${latest.visceral}</b></div>` : ''}
-    ${latest.bmr != null ? `<div class="rrow"><span>الأيض الأساسي</span><b>${nK(latest.bmr)} سعرة</b></div>` : ''}
-    ${latest.score != null ? `<div class="rrow"><span>نتيجة InBody</span><b>${latest.score}/100</b></div>` : ''}
-    <div class="rrow"><span>الوزن المستهدف</span><b>${n1(INBODY_CARD.target)} كغم</b></div>
+  <div class="bchips">
+    ${[['كتلة الجسم', latest.bmi != null ? n1(latest.bmi) : null],
+       ['دهون حشوية', latest.visceral != null ? latest.visceral : null],
+       ['أيض أساسي', latest.bmr != null ? nK(latest.bmr) : null],
+       ['نتيجة InBody', latest.score != null ? latest.score + '/100' : null]]
+      .filter(x => x[1] != null).map(([n, v]) => `<div><i>${n}</i><b>${v}</b></div>`).join('')}
   </div>
-  ${list.length > 1 ? weightChart(list) : ''}
   ` : '<div class="empty">صوّر أول InBody فوق</div>'}
 
   ${list.length ? `
@@ -1328,11 +1342,20 @@ function body() {
       </div>`).join('')}
   </div>` : ''}
 
-  <div class="lbl">مسار بطاقة InBody</div>
-  <div class="histbox">
-    ${[['الوزن', INBODY_HISTORY.weight, 'كغم', 'var(--acc)', -1],
-       ['العضلات SMM', INBODY_HISTORY.smm, 'كغم', 'var(--d4)', 1],
-       ['الدهون PBF', INBODY_HISTORY.pbf, '%', 'var(--d1)', -1]].map(([n, arr, unit, c, up]) => {
+  ${(() => {   // مسار واحد بس: قياساتك أنت لما تصير ٣ فأكثر، وقبلها مسار البطاقة المطبوعة
+    const own = list.length >= 3;
+    const pick = k => list.map(b => b[k]).filter(v => v != null);
+    const series = own
+      ? [['الوزن', pick('weight'), 'كغم', 'var(--acc)', -1],
+         ['العضلات', pick('smm'), 'كغم', 'var(--d4)', 1],
+         ['الدهون', pick('pbf'), '%', 'var(--d1)', -1]]
+      : [['الوزن', INBODY_HISTORY.weight, 'كغم', 'var(--acc)', -1],
+         ['العضلات SMM', INBODY_HISTORY.smm, 'كغم', 'var(--d4)', 1],
+         ['الدهون PBF', INBODY_HISTORY.pbf, '%', 'var(--d1)', -1]];
+    const ok = series.filter(x => x[1].length >= 2);
+    if (!ok.length) return '';
+    return `<div class="lbl">${own ? 'مسار قياساتك' : 'مسار بطاقة InBody'}</div>
+    <div class="histbox">${ok.map(([n, arr, unit, c, up]) => {
       const now = arr[arr.length - 1], diff = Math.round((now - arr[0]) * 10) / 10;
       const cls = diff === 0 ? '' : (diff > 0 ? up > 0 : up < 0) ? 'good' : 'warn';
       return `<div class="spark" style="--c:${c}">
@@ -1340,10 +1363,10 @@ function body() {
           <span><b>${n1(now)} ${unit}</b>${diff ? `<i class="${cls}">${diff > 0 ? '+' : '−'}${n1(Math.abs(diff))}</i>` : ''}</span></div>
         ${sparkline(arr)}
       </div>`;
-    }).join('')}
-  </div>
+    }).join('')}</div>`;
+  })()}
 
-  <div class="lbl">خطة غذائية</div>
+  ${lbl2(LBI.plate, 'خطة غذائية')}
   ${S.diet ? `
   <div class="rstats">
     <div><b>${nK(S.diet.calories)}</b><i>سعرة/يوم</i></div>
@@ -1566,11 +1589,13 @@ function food() {
     <div class="calnum"><b>${nK(tot.calories)}</b><i>من ${nK(target)} سعرة</i></div>
   </div>` : `
   <div class="rstats" style="grid-template-columns:1fr"><div><b>${nK(tot.calories)}</b><i>سعرة</i></div></div>`}
-  ${target ? `<p class="cmpline ${tot.calories > target ? 'warn' : 'good'}">${
-      tot.calories > target ? `تجاوزت هدفك بـ${nK(tot.calories - target)} سعرة`
-                            : `باقي لك ${nK(target - tot.calories)} سعرة اليوم`}</p>` : ''}
-  ${cmp != null ? `<p class="cmpline sub2">${
-    cmp === 0 ? 'نفس آخر يوم مسجّل' : `${cmp > 0 ? '▲' : '▼'} ${nK(Math.abs(cmp))} سعرة ${cmp > 0 ? 'أكثر من' : 'أقل من'} آخر يوم مسجّل`}</p>` : ''}
+  ${target || cmp != null ? `<div class="fmeta">
+    ${target ? `<b class="${tot.calories > target ? 'warn' : 'good'}">${
+      tot.calories > target ? `تجاوزت بـ${nK(tot.calories - target)} سعرة`
+                            : `باقي لك ${nK(target - tot.calories)} سعرة`}</b>` : ''}
+    ${cmp != null ? `<i>${cmp === 0 ? 'نفس آخر يوم' :
+      `${cmp > 0 ? '▲' : '▼'} ${nK(Math.abs(cmp))} عن آخر يوم`}</i>` : ''}
+  </div>` : ''}
 
   <div class="lbl">العناصر الغذائية</div>
   <div class="macros">
