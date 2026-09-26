@@ -130,6 +130,7 @@ const TABS = [
 const ICON = {
   home: TABS[0][1], food: TABS[1][1], body: TABS[2][1], report: TABS[3][1], ask: TABS[4][1],
   log: `<svg viewBox="0 0 24 24" ${ICON_S}><rect x="3.5" y="5" width="17" height="15.5" rx="3"/><path d="M8 3v4M16 3v4M3.5 10h17"/><circle cx="8.5" cy="14" r=".9" fill="currentColor" stroke="none"/><circle cx="12" cy="14" r=".9" fill="currentColor" stroke="none"/><circle cx="15.5" cy="14" r=".9" fill="currentColor" stroke="none"/></svg>`,
+  classes: `<svg viewBox="0 0 24 24" ${ICON_S}><rect x="3" y="4.5" width="18" height="16" rx="3.2"/><path d="M3 9.5h18M8 3v3M16 3v3"/><path d="M7.5 13.5h4M7.5 16.5h9"/></svg>`,
   records: `<svg viewBox="0 0 24 24" ${ICON_S}><path d="M7.5 4h9v5.2a4.5 4.5 0 0 1-9 0z"/><path d="M7.5 5.6H5.2a2.6 2.6 0 0 0 2.5 4.2"/><path d="M16.5 5.6h2.3a2.6 2.6 0 0 1-2.5 4.2"/><path d="M12 13.7V17M9.5 20h5M10.5 17h3"/></svg>`,
 };
 // ترويسة موحّدة لكل الصفحات: أيقونة ملوّنة + عنوان + سطر فرعي اختياري + أزرار
@@ -156,6 +157,110 @@ function recoveryInfo(day) {
   const need = RECOVERY_H[day] || 72;
   const pct = Math.min(100, Math.round(hSince / need * 100));
   return { pct, ready: pct >= 100, remainH: Math.max(0, Math.ceil(need - hSince)), lastDate: last.date };
+}
+
+/* ===== حصص الجيم (جدول Gold's Gym — سبتمبر ٢٠٢٦) =====
+   كل حصة: [يوم الأسبوع بترقيم JS (٠ أحد … ٦ سبت)، الوقت، الاسم، المدرّب، الاستوديو] */
+const BRANCH = { GGA: 'عبدون', GGK: 'خلدا' };
+const STUDIO = { main: 'الاستوديو الرئيسي', cyc: 'استوديو السايكل' };
+// ألوان الحصص مأخوذة من ألوانها بالبوستر نفسه — GRIT/CORE أسود بالبوستر فبناخذ لون النص
+// حتى يبانوا بالوضعين الفاتح والغامق
+const CLS_C = {
+  'BODYPUMP': '#e8112d', 'BODYCOMBAT': '#a8b02f', 'BODYATTACK': '#f0a02a', 'BODYBALANCE': '#7ab648',
+  'GRIT': 'var(--tx)', 'CORE': 'var(--tx)', 'GRIT & CORE': '#c0512a',
+  'RPM': '#00a3e0', 'SPRINT': '#b99b4a', 'THE TRIP': '#9b7fd4', 'CYCLING': '#e8c400',
+  'YOGA': '#f5c518', 'ZUMBA': '#39b54a', 'CIRCUIT': '#a9785a', 'MOBILITY': '#d32f2f',
+  'GLUTES BLAST': '#ff3d8b', 'ULTIMATE BURN': '#00bcd4', 'JUMPING': '#4caf50',
+  'FREE STYLE STEP': '#00a651', "GOLD'S 1000": '#c8a200', 'ATHLATICS': '#2f7fe0',
+  'SENIOR ADULTS': '#b3202e',
+};
+const CLS = {
+  GGA: [
+    [6,'07:00','FREE STYLE STEP','HANAN','main'], [0,'07:00','BODYPUMP','ZAHRA','main'],
+    [1,'07:00','BODYATTACK','HANAN','main'], [2,'07:00','CORE',"BAHA'A",'main'],
+    [3,'07:00','BODYCOMBAT','HANAN','main'], [4,'07:00','CIRCUIT','IBRAHEEM','main'],
+    [6,'08:00','CIRCUIT','HANAN','main'], [0,'08:00','BODYCOMBAT','CHRISTINE','main'],
+    [1,'08:00','BODYPUMP','HANAN','main'], [2,'08:00','BODYCOMBAT','ROZA','main'],
+    [3,'08:00','GLUTES BLAST','HANAN','main'], [4,'08:00','BODYPUMP','AHMAD','main'],
+    [6,'09:00','BODYPUMP','NASER','main'], [0,'09:00','CORE','HANAN','main'],
+    [1,'09:00','ULTIMATE BURN','DOHAL','main'], [2,'09:00','GRIT','ROZA','main'],
+    [3,'09:00','MOBILITY','DINA','main'], [4,'09:00','YOGA','COACH D','main'],
+    [6,'10:00','GRIT','NASER','main'], [5,'10:00','BODYPUMP','TALEEN','main'],
+    [6,'17:00','CIRCUIT','ROZA','main'], [0,'17:00','GRIT','AHMAD','main'],
+    [1,'17:00','CORE','AHMAD','main'], [2,'17:00','JUMPING','ELIANE','main'],
+    [3,'17:00','CORE','HANAN','main'], [4,'17:00','BODYPUMP','TALEEN','main'],
+    [6,'18:00','BODYATTACK','HANAN','main'], [0,'18:00','CIRCUIT','HANAN','main'],
+    [1,'18:00','BODYPUMP','AHMAD','main'], [2,'18:00','BODYPUMP','NASER','main'],
+    [3,'18:00','CIRCUIT','TALEEN','main'], [4,'18:00','BODYATTACK','IBRAHEEM','main'],
+    [6,'19:00','BODYPUMP','HANAN','main'], [0,'19:00','BODYCOMBAT','HANAN','main'],
+    [1,'19:00','BODYATTACK','AHMAD','main'], [2,'19:00','FREE STYLE STEP','HANAN','main'],
+    [3,'19:00','BODYCOMBAT','AHMAD','main'], [4,'19:00','BODYCOMBAT','NASER','main'],
+    [6,'20:00',"GOLD'S 1000",'NASER','main'], [0,'20:00','MOBILITY','DINA','main'],
+    [2,'20:00','BODYCOMBAT','NASER','main'], [3,'20:00','YOGA','DINA','main'],
+    [4,'20:00','ZUMBA','DALIA','main'],
+    [0,'21:00','ZUMBA','LUCIEN','main'], [2,'21:00','ZUMBA','LUCIEN','main'],
+    // استوديو السايكل
+    [6,'08:15','SPRINT','NASER','cyc'], [1,'08:00','CYCLING','CHRISTINE','cyc'],
+    [0,'09:00','CYCLING','IBRAHEEM','cyc'], [2,'09:00','RPM',"ISRA'A",'cyc'],
+    [3,'09:00','CYCLING','LILACE','cyc'], [4,'09:00','THE TRIP','AHMAD','cyc'],
+    [5,'11:00','RPM',"ISRA'A",'cyc'],
+    [6,'18:00','RPM',"ISRA'A",'cyc'], [0,'18:00','THE TRIP','AHMAD','cyc'],
+    [1,'18:00','RPM','KATIA','cyc'], [2,'18:00','CYCLING','LILACE','cyc'],
+    [3,'18:00','RPM','AHMAD','cyc'], [4,'18:00','SPRINT','NASER','cyc'],
+    [6,'19:00','SPRINT','NASER','cyc'], [2,'19:15','SPRINT','NASER','cyc'],
+    [3,'19:00','CYCLING','LILACE','cyc'],
+  ],
+  GGK: [
+    [1,'07:30','GRIT','NASER','main'], [2,'07:00','ATHLATICS','MOHANNAD','main'],
+    [3,'07:00','BODYPUMP','CHRISTINE','main'],
+    [0,'08:15','BODYCOMBAT','ROZA','main'], [1,'08:00','BODYPUMP','NASER','main'],
+    [2,'08:00','CORE','MOHANNAD','main'], [3,'08:00','BODYCOMBAT','CHRISTINE','main'],
+    [4,'08:00','CIRCUIT','CHRISTINE','main'],
+    [0,'09:00','GRIT & CORE','ROZA','main'], [1,'09:00','YOGA','SAHAR','main'],
+    [6,'10:00','BODYPUMP','INJI','main'], [0,'10:00','SENIOR ADULTS','ANAS','main'],
+    [2,'10:00','SENIOR ADULTS','NIDAL','main'], [4,'10:00','SENIOR ADULTS','ANAS / NIDAL','main'],
+    [5,'10:00','ATHLATICS','MOHANNAD','main'],
+    [6,'11:00','BODYCOMBAT','INJI','main'], [5,'11:00','BODYCOMBAT','MOHANNAD','main'],
+    [0,'17:00','BODYATTACK','OMAR','main'], [1,'17:00','GRIT','OMAR','main'],
+    [2,'17:00','BODYCOMBAT','INJI','main'], [3,'17:30','CORE','NASER','main'],
+    [4,'17:00','CIRCUIT','HARITH','main'],
+    [6,'18:00','BODYPUMP','AHMAD','main'], [0,'18:15','GRIT','NASER','main'],
+    [1,'18:00','BODYPUMP','INJI','main'], [2,'18:00','BODYPUMP','AHMAD','main'],
+    [3,'18:00','GRIT','ROZA','main'], [4,'18:00','BODYCOMBAT','LINA','main'],
+    [6,'19:00','BODYCOMBAT','AHMAD','main'], [0,'19:00','BODYCOMBAT','NASER','main'],
+    [1,'19:00','BODYCOMBAT','OMAR','main'], [2,'19:00','BODYATTACK','AHMAD','main'],
+    [3,'19:00','BODYCOMBAT','ROZA','main'],
+    [6,'20:00','BODYBALANCE','OMAR','main'], [0,'20:00','YOGA','SAHAR','main'],
+    [1,'20:00','CORE','INJI','main'], [2,'20:00','YOGA','SAHAR','main'],
+    [3,'20:00','BODYPUMP','OMAR','main'],
+    // استوديو السايكل
+    [1,'07:00','SPRINT','FARAH','cyc'], [4,'07:00','SPRINT','FARAH','cyc'],
+    [6,'10:00','CYCLING','CHRISTINE','cyc'],
+    [6,'17:00','RPM','AHMAD','cyc'], [0,'17:30','SPRINT','NASER','cyc'],
+    [2,'17:15','SPRINT','AHMAD','cyc'], [3,'18:00','SPRINT','NASER','cyc'],
+  ],
+};
+const CLS_MIN = 45;                       // مدة الحصة التقريبية بالدقائق
+const clsKey = c => `${c[1]}|${c[2]}`;    // الوقت+الاسم يكفي لتمييز الحصة داخل اليوم
+const clsColor = n => CLS_C[n] || 'var(--acc)';
+// عرض الوقت بصيغة ١٢ ساعة عربية
+const clsTime = t => { const [h, m] = t.split(':').map(Number);
+  return `${h % 12 || 12}:${pad(m)} ${h < 12 ? 'ص' : 'م'}`; };
+// هل سجّلت حضور هالحصة بهذا التاريخ؟
+const clsDone = (ds, key) => S.sessions.findIndex(s => s.day === 'class' && s.date === ds && s.cls && s.cls.key === key);
+
+function toggleClass(br, key, ds) {
+  const wd = new Date(ds + 'T12:00:00').getDay();
+  const c = (CLS[br] || []).find(x => x[0] === wd && clsKey(x) === key);
+  if (!c) return;
+  const i = clsDone(ds, key);
+  if (i >= 0) { S.sessions.splice(i, 1); save(); render(); return msg('شيلت الحضور'); }
+  const t = new Date(`${ds}T${c[1]}:00`).getTime();
+  S.sessions.push({ day: 'class', date: ds, start: t, end: t + CLS_MIN * 60000, entries: [],
+    cls: { key, name: c[2], coach: c[3], studio: c[4], branch: br, time: c[1] } });
+  // نحافظ على الترتيب الزمني لأن حسابات التطوّر بتعتمد على ترتيب الجلسات
+  S.sessions.sort((a, b) => a.date < b.date ? -1 : a.date > b.date ? 1 : 0);
+  save(); buzz(20); render(); msg('🔥 تم تسجيل حضورك');
 }
 
 /* ===== بيانات آخر بطاقة InBody (٣٠ أغسطس ٢٠٢٦) ===== */
@@ -376,10 +481,10 @@ let page = 'home';
 // إعادة الرسم تحافظ على موضعك في الصفحة. مرّر true فقط عند الانتقال لشاشة أخرى.
 function render(toTop) {
   const y = window.scrollY;
-  const OVERLAY = ['ask', 'report', 'body', 'food', 'records'];   // شاشات تُعرض حتى لو في تمرين شغّال
+  const OVERLAY = ['ask', 'report', 'body', 'food', 'records', 'classes'];   // شاشات تُعرض حتى لو في تمرين شغّال
   const active = S.active && !OVERLAY.includes(page) ? 'workout' : page;
   const app = $('#app');
-  ({ home, workout, log, ask, report, body, food, records }[active])();
+  ({ home, workout, log, ask, report, body, food, records, classes }[active])();
   renderTabs(active);
   window.scrollTo(0, toTop ? 0 : y);
   // حركة دخول خفيفة عند الانتقال لشاشة جديدة فقط — مش مع كل تحديث داخلي
@@ -412,7 +517,9 @@ function renderTabs(active) {
 
 function home() {
   const done = S.sessions;
-  const lastDay = done.length ? done[done.length - 1].day : null;
+  // آخر يوم برنامج فعلي — حصص الجيم ما بتدخل بترتيب الأيام الأربعة
+  const prog = done.filter(s => PROGRAM[s.day]);
+  const lastDay = prog.length ? prog[prog.length - 1].day : null;
   const keys = Object.keys(PROGRAM);
   const next = lastDay ? keys[(keys.indexOf(lastDay) + 1) % keys.length] : keys[0];
   const streak = streakWeeks();
@@ -453,13 +560,35 @@ function home() {
     }).join('')}
   </div>
 
+  ${(() => {   // حصص اليوم بفرعك — الجاي منها أولاً
+    const br = S.branch || 'GGA', wd = new Date().getDay();
+    const now = new Date().getHours() * 60 + new Date().getMinutes();
+    const all = (CLS[br] || []).filter(c => c[0] === wd)
+      .sort((a, b) => a[1] < b[1] ? -1 : a[1] > b[1] ? 1 : 0);
+    const next = all.filter(c => { const [h, m] = c[1].split(':').map(Number); return h * 60 + m >= now - 30; });
+    const show = (next.length ? next : all).slice(0, 4);
+    return `<div class="lbl">حصص اليوم · ${BRANCH[br]}
+      <button class="lblbtn" onclick="clsDay=null;go('classes')">كل الجدول</button></div>
+    ${!show.length ? '<div class="clnone">ما في حصص اليوم بهالفرع</div>' : `
+    <div class="clstrip">
+      ${show.map(c => {
+        const on = clsDone(today(), clsKey(c)) >= 0;
+        return `<button class="ccard${on ? ' on' : ''}" style="--c:${clsColor(c[2])}"
+          onclick="clsDay=null;go('classes')">
+          <em>${clsTime(c[1])}</em><b>${esc(c[2])}</b><i>${esc(c[3])}</i>
+          ${on ? '<span class="cdot">✓</span>' : ''}</button>`;
+      }).join('')}
+    </div>`}`;
+  })()}
+
   <div class="lbl">آخر ٧ أيام</div>
   <div class="week">
     ${Array.from({ length: 7 }, (_, n) => {
       const dt = new Date(); dt.setDate(dt.getDate() - (6 - n));
       const ds = `${dt.getFullYear()}-${pad(dt.getMonth() + 1)}-${pad(dt.getDate())}`;
       const s = done.find(x => x.date === ds);
-      return `<div class="wd${s ? ' on' : ''}${ds === today() ? ' now' : ''}" style="--dc:${s ? DAY_ACC[s.day] : 'var(--line)'}">
+      return `<div class="wd${s ? ' on' : ''}${ds === today() ? ' now' : ''}" style="--dc:${
+        s ? (s.day === 'class' ? 'var(--d3)' : DAY_ACC[s.day]) : 'var(--line)'}">
         <i></i><span>${['أحد','اثنين','ثلاثا','أربعا','خميس','جمعة','سبت'][dt.getDay()]}</span></div>`;
     }).join('')}
   </div>
@@ -718,7 +847,7 @@ function miniCalendar() {
     <div class="calwd">${WD.map(w => `<span>${w}</span>`).join('')}</div>
     <div class="calcells">
       ${cells.map(c => !c ? `<span class="cc empty"></span>`
-        : `<span class="cc${c.isToday ? ' today' : ''}" style="${c.day ? `--dc:${DAY_ACC[c.day]}` : ''}">${c.d}${c.day ? '<i></i>' : ''}</span>`
+        : `<span class="cc${c.isToday ? ' today' : ''}" style="${c.day ? `--dc:${c.day === 'class' ? 'var(--d3)' : DAY_ACC[c.day]}` : ''}">${c.d}${c.day ? '<i></i>' : ''}</span>`
       ).join('')}
     </div>
   </div>`;
@@ -734,12 +863,16 @@ function log() {
     <div class="rec">
       <div class="recrow">
         <button class="recmain" onclick="openRec=${openRec === i ? -1 : i};render()">
-          <b class="dlbl"><span class="dicon" style="color:${DAY_ACC[s.day] || 'var(--mut)'}">${DAY_ICON[s.day] || ''}</span>${PROGRAM[s.day] ? PROGRAM[s.day].name : s.day}</b>
+          <b class="dlbl"><span class="dicon" style="color:${s.cls ? clsColor(s.cls.name) : DAY_ACC[s.day] || 'var(--mut)'}">${
+            s.cls ? ICON.classes : DAY_ICON[s.day] || ''}</span>${
+            s.cls ? esc(s.cls.name) : PROGRAM[s.day] ? PROGRAM[s.day].name : s.day}</b>
           <time>${fmt(s.date)} · ${Math.max(1, Math.round((s.end - s.start) / 60000))} د</time>
         </button>
         ${trash(`delRec(${S.sessions.length - 1 - i})`, 'حذف التمرين')}
       </div>
-      ${openRec === i ? `<div class="body">${s.entries.map((e, k) => `
+      ${openRec === i && s.cls ? `<div class="body"><div class="row">
+          <b>${esc(s.cls.coach)}</b><span>${STUDIO[s.cls.studio]} · ${BRANCH[s.cls.branch]}</span></div></div>` : ''}
+      ${openRec === i && !s.cls ? `<div class="body">${s.entries.map((e, k) => `
         <div class="row">
           <b>${esc(ex(e.ex).ar)}</b>
           <span>${e.sets.map(x => setText(e.ex, x)).join('  ')}</span>
@@ -805,12 +938,13 @@ function report() {
         const ds = `${dt.getFullYear()}-${pad(dt.getMonth() + 1)}-${pad(dt.getDate())}`;
         const ss = S.sessions.filter(x => x.date === ds);
         const sets = ss.reduce((a, x) => a + x.entries.reduce((b, e) => b + e.sets.length, 0), 0);
-        return { ds, sets, day: ss[0] && ss[0].day, lbl: ['أحد','اثنين','ثلاثا','أربعا','خميس','جمعة','سبت'][dt.getDay()] };
+        return { ds, sets, any: ss.length, day: ss[0] && ss[0].day, lbl: ['أحد','اثنين','ثلاثا','أربعا','خميس','جمعة','سبت'][dt.getDay()] };
       });
       const mx = Math.max(1, ...days.map(x => x.sets));
-      return days.map(x => `<div class="dbar" style="--dc:${x.day ? DAY_ACC[x.day] : 'var(--line)'}">
-        <span class="dbv">${x.sets || ''}</span>
-        <u><s style="height:${x.sets ? Math.max(8, x.sets / mx * 100) : 0}%"></s></u>
+      return days.map(x => `<div class="dbar" style="--dc:${
+        x.day ? (x.day === 'class' ? 'var(--d3)' : DAY_ACC[x.day]) : 'var(--line)'}">
+        <span class="dbv">${x.sets || (x.any ? '✓' : '')}</span>
+        <u><s style="height:${x.sets ? Math.max(8, x.sets / mx * 100) : x.any ? 8 : 0}%"></s></u>
         <em>${x.lbl}</em></div>`).join('');
     })()}
   </div>
@@ -966,6 +1100,74 @@ function records() {
       </div>` : ''}
     `).join('')}
   </div>`).join('')}
+  `;
+}
+
+/* ===== صفحة الحصص ===== */
+let clsDay = null;                     // اليوم المعروض (ترقيم JS)، افتراضياً اليوم
+const WD_AR = ['الأحد', 'الاثنين', 'الثلاثا', 'الأربعا', 'الخميس', 'الجمعة', 'السبت'];
+// تاريخ اليوم المختار ضمن الأسبوع الحالي (اليوم أو أقرب يوم سابق — ما منسجّل حضور بالمستقبل)
+function clsDate(wd) {
+  const d = new Date();
+  const diff = (d.getDay() - wd + 7) % 7;
+  d.setDate(d.getDate() - diff);
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+const myClasses = () => S.sessions.filter(s => s.day === 'class');
+
+function classes() {
+  const br = S.branch || 'GGA';
+  const wd = clsDay == null ? new Date().getDay() : clsDay;
+  const ds = clsDate(wd), isToday = ds === today();
+  const list = (CLS[br] || []).filter(c => c[0] === wd)
+    .sort((a, b) => a[1] < b[1] ? -1 : a[1] > b[1] ? 1 : 0);
+  const mine = myClasses();
+  const mo = today().slice(0, 7);
+  const moCount = mine.filter(s => s.date.slice(0, 7) === mo).length;
+  // أكثر حصة بتحضرها
+  const tally = {};
+  mine.forEach(s => { tally[s.cls.name] = (tally[s.cls.name] || 0) + 1; });
+  const fav = Object.entries(tally).sort((a, b) => b[1] - a[1])[0];
+
+  $('#app').innerHTML = `
+  ${head('classes', 'حصص الجيم', `<button class="link" onclick="go('home')">رجوع</button>`,
+    `${BRANCH[br]} · ${WD_AR[wd]}${isToday ? ' (اليوم)' : ''}`)}
+
+  <div class="seg">
+    ${Object.entries(BRANCH).map(([k, n]) => `<button class="${k === br ? 'on' : ''}"
+      onclick="S.branch='${k}';save();render()">${n}</button>`).join('')}
+  </div>
+
+  ${mine.length ? `<div class="clstats">
+    <div><b>${moCount}</b><i>${moCount === 1 ? 'حصة هالشهر' : moCount === 2 ? 'حصتان هالشهر' : 'حصص هالشهر'}</i></div>
+    <div><b>${mine.length}</b><i>حصة بالمجموع</i></div>
+    ${fav ? `<div><b style="color:${clsColor(fav[0])};font-size:14px;line-height:1.5">${fav[0]}</b><i>أكثر وحدة بتحضرها</i></div>` : ''}
+  </div>` : ''}
+
+  <div class="daytabs">
+    ${[6, 0, 1, 2, 3, 4, 5].map(d => `<button class="${d === wd ? 'on' : ''}${d === new Date().getDay() ? ' today' : ''}"
+      onclick="clsDay=${d};render(true)">${WD_AR[d].replace('ال', '')}</button>`).join('')}
+  </div>
+
+  ${!list.length ? '<div class="empty">ما في حصص هذا اليوم بهالفرع</div>'
+    : ['main', 'cyc'].map(st => {
+      const g = list.filter(c => c[4] === st);
+      if (!g.length) return '';
+      return `<div class="lbl">${STUDIO[st]}</div>
+      <div class="clist">
+        ${g.map(c => {
+          const key = clsKey(c), on = clsDone(ds, key) >= 0;
+          return `<div class="crow${on ? ' on' : ''}" style="--c:${clsColor(c[2])}">
+            <span class="ctime">${clsTime(c[1])}</span>
+            <span class="cmain"><b>${esc(c[2])}</b><em>${esc(c[3])}</em></span>
+            <button class="cbtn" onclick="toggleClass('${br}','${key}','${ds}')"
+              aria-label="${on ? 'إلغاء الحضور' : 'سجّل حضورك'}">${on ? '✓ حضرت' : 'سجّل'}</button>
+          </div>`;
+        }).join('')}
+      </div>`;
+    }).join('')}
+
+  <p class="muted sm" style="margin-top:14px">تسجيل الحضور بينحسب مع تمارينك: بيدخل بالسلسلة الأسبوعية وبالتقويم وبالتقرير.</p>
   `;
 }
 
@@ -1595,7 +1797,12 @@ function context() {
     `${ex(x.id).ar}: الآن ${x.p.now} ← ${x.p.goal} كغم خلال ${x.p.weeks} أسبوع`).join('\n');
 
   const w = weekStats(7);
+  const cls = myClasses().slice(-8).map(s => `${s.date}: ${s.cls.name} مع ${s.cls.coach} (${BRANCH[s.cls.branch]})`).join('\n');
   return `تاريخ اليوم: ${today()}
+فرعه المفضّل بالجيم: ${BRANCH[S.branch || 'GGA']}${cls ? `
+
+=== آخر حصص جماعية حضرها (غير تمارين الحديد) ===
+${cls}` : ''}
 آخر ٧ أيام: ${w.days} تمارين، ${w.sets} مجموعة، ${Math.round(w.kg)} كغم إجمالي.
 
 === برنامجه (٤ أيام) بأوزانه الحالية ===
