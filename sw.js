@@ -1,4 +1,4 @@
-const CACHE = 'tamareeni-v51';
+const CACHE = 'tamareeni-v52';
 const ASSETS = ['./', './index.html', './app.js', './manifest.json', './icon-192.png', './icon-512.png',
   './fonts/plex-arabic-400.woff2', './fonts/plex-latin-400.woff2',
   './fonts/plex-arabic-600.woff2', './fonts/plex-latin-600.woff2',

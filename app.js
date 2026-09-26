@@ -350,6 +350,50 @@ function msg(t, kind) {
   clearTimeout(el._h); el._h = setTimeout(() => { el.classList.remove('show'); el.classList.remove('pr'); }, 2200);
 }
 function buzz(p) { if (navigator.vibrate) navigator.vibrate(p); }
+
+/* ===== نافذة تأكيد داخل التطبيق =====
+   بديل confirm() الجاهز — هداك كان يطلع باسم الدومين (github.io) وبخط المتصفّح،
+   فيبيّن كأنه مو من التطبيق. هاي بترجّع Promise عشان تنكتب مع await زي confirm. */
+const SHIC = {
+  warn: '<path d="M12 3L2 20h20L12 3z"/><path d="M12 10v4M12 17.5v.01"/>',
+  trash: '<path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14M10 11v5M14 11v5"/>',
+  swap: '<path d="M4 8h13l-3-3M20 16H7l3 3"/>',
+};
+let sheetRes = null;
+function sheetClose(v) {
+  const el = $('#sheet'); if (!sheetRes) return;
+  const done = sheetRes; sheetRes = null;
+  el.classList.remove('on');
+  setTimeout(() => {
+    if (!sheetRes) { el.classList.remove('show'); el.innerHTML = ''; document.body.classList.remove('locked'); }
+  }, 200);
+  done(v);
+}
+const sheetNo = () => sheetClose(false);
+const sheetYes = () => { buzz(10); sheetClose(true); };
+
+function sure(title, o = {}) {
+  const { body = '', ok = 'تمام', no = 'رجوع', danger = false, icon = 'warn' } = o;
+  sheetClose(false);                                   // ما نخلّي وحدة قديمة معلّقة
+  return new Promise(res => {
+    sheetRes = res;
+    const el = $('#sheet');
+    el.innerHTML = `<div class="shcard" role="alertdialog" aria-modal="true">
+      <span class="shic${danger ? ' bad' : ''}"><svg viewBox="0 0 24 24" ${ICON_S}>${SHIC[icon] || SHIC.warn}</svg></span>
+      <h3>${esc(title)}</h3>
+      ${body ? `<p>${esc(body)}</p>` : ''}
+      <div class="shbtns">
+        <button class="btn${danger ? ' danger' : ''}" onclick="sheetYes()">${esc(ok)}</button>
+        <button class="btn quiet" onclick="sheetNo()">${esc(no)}</button>
+      </div></div>`;
+    el.classList.add('show');
+    document.body.classList.add('locked');             // ما يتحرّك اللي تحت وأنت بتقرأ السؤال
+    void el.offsetWidth;                               // يجبر حساب الحالة الأولى فتشتغل الحركة
+    el.classList.add('on');
+    setTimeout(() => { const b = el.querySelector('.btn.quiet'); if (b) b.focus(); }, 60);
+  });
+}
+addEventListener('keydown', e => { if (e.key === 'Escape' && sheetRes) sheetNo(); });
 let AC;
 function beep(times) {
   try {
@@ -650,28 +694,40 @@ function workout() {
   // تقدّم الجلسة: كم مجموعة خلّصت من كم — يظهر بالترويسة وبشريط رفيع تحتها
   const allSets = a.entries.reduce((n, e) => n + e.sets.length, 0);
   const doneSets = a.entries.reduce((n, e) => n + e.sets.filter(s => s.done).length, 0);
+  const dc = DAY_ACC[a.day] || 'var(--acc)';
+  const C = 2 * Math.PI * 20.5;                       // محيط حلقة التقدّم
+  const frac = allSets ? doneSets / allSets : 0;
   $('#app').innerHTML = `
-  <header>
-    <div><h1 class="dlbl" style="color:${DAY_ACC[a.day] || 'var(--tx)'}"><span class="dicon">${DAY_ICON[a.day] || ''}</span>${PROGRAM[a.day].name}</h1>
-      <div class="sub"><span id="clock">0:00</span> · ${doneSets} من ${allSets} مجموعة</div></div>
-    <div class="hlinks">
-      <button class="link iconbtn" onclick="cancel()" aria-label="رجوع — إلغاء بلا حفظ">
-        <svg viewBox="0 0 24 24" ${ICON_S}><path d="M6 6l12 12M18 6L6 18"/></svg>
-      </button>
-      <button class="link" onclick="finish()">إنهاء</button>
+  <header class="whead" style="--dc:${dc}">
+    <div class="htitle">
+      <span class="wring" aria-label="${doneSets} من ${allSets} مجموعة">
+        <svg class="rg" viewBox="0 0 46 46" aria-hidden="true">
+          <circle class="tr" cx="23" cy="23" r="20.5" fill="none" stroke-width="3"/>
+          <circle class="bar" cx="23" cy="23" r="20.5" fill="none" stroke-width="3" stroke-linecap="round"
+                  stroke-dasharray="${(frac * C).toFixed(1)} ${C.toFixed(1)}"/>
+        </svg>
+        <span class="dicon">${DAY_ICON[a.day] || ''}</span>
+      </span>
+      <div>
+        <h1 class="wtitle" style="color:${dc}">${PROGRAM[a.day].name}</h1>
+        <div class="wmeta">
+          <span class="wchip tm"><svg viewBox="0 0 24 24" ${ICON_S}><circle cx="12" cy="12" r="9"/><path d="M12 7.5V12l3 2"/></svg><b id="clock">0:00</b></span>
+          <span class="wchip"><b>${doneSets} / ${allSets}</b>مجموعة</span>
+        </div>
+      </div>
     </div>
+    <button class="wfin" onclick="buzz(10);finish()">إنهاء</button>
   </header>
-  <div class="wprog" style="--dc:${DAY_ACC[a.day] || 'var(--acc)'}"><i style="width:${allSets ? doneSets / allSets * 100 : 0}%"></i></div>
 
-  <div class="wbody" style="--dc:${DAY_ACC[a.day] || 'var(--acc)'}">
+  <div class="wbody" style="--dc:${dc}">
   ${groupSS(a.entries).map(g =>
     g.ss ? `<div class="ssgroup"><div class="sslabel">${g.idx.length > 1
               ? 'سوبرست — بدون راحة بين التمرينين' : 'سوبرست'}</div>${g.idx.map(exSection).join('')}</div>`
          : exSection(g.idx[0])).join('')}
   </div>
 
-  <button class="btn" onclick="finish()">إنهاء التمرين</button>
-  <button class="btn quiet" onclick="cancel()">إلغاء</button>`;
+  <button class="btn" onclick="buzz(10);finish()">إنهاء التمرين</button>
+  <button class="wcancel" onclick="cancel()">إلغاء التمرين بدون حفظ</button>`;
   clock();
 }
 
@@ -834,8 +890,9 @@ function finish() {
   S.active = null; save(); restSkip(); page = 'home'; render(true);
   msg('💪 تم حفظ التمرين');
 }
-function cancel() {
-  if (!confirm('إلغاء التمرين بدون حفظ؟')) return;
+async function cancel() {
+  if (!await sure('تلغي التمرين؟', { body: 'اللي سجّلته بهاي الجلسة رح يروح ومارح ينحفظ بالسجل.',
+    ok: 'آه، ألغِ', no: 'كمّل تمرين', danger: true })) return;
   S.active = null; save(); restSkip(); page = 'home'; render(true);
 }
 
@@ -847,14 +904,17 @@ const trash = (call, label) => `<button class="del" onclick="${call}" aria-label
        stroke-linecap="round" stroke-linejoin="round">
     <path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14M10 11v5M14 11v5"/></svg></button>`;
 
-function delRec(idx) {
+async function delRec(idx) {
   const s = S.sessions[idx]; if (!s) return;
-  if (!confirm(`حذف تمرين ${PROGRAM[s.day] ? PROGRAM[s.day].name : s.day} بتاريخ ${fmt(s.date)}؟`)) return;
+  if (!await sure('تحذف هذا التمرين؟', {
+    body: `${s.cls ? s.cls.name : PROGRAM[s.day] ? PROGRAM[s.day].name : s.day} · ${fmt(s.date)}`,
+    ok: 'احذف', danger: true, icon: 'trash' })) return;
   S.sessions.splice(idx, 1); openRec = -1; save(); render();
 }
-function delEntry(idx, k) {
+async function delEntry(idx, k) {
   const s = S.sessions[idx]; if (!s || !s.entries[k]) return;
-  if (!confirm(`حذف «${ex(s.entries[k].ex).ar}» من هذا التمرين؟`)) return;
+  if (!await sure('تشيل هذا التمرين من الجلسة؟', { body: ex(s.entries[k].ex).ar,
+    ok: 'شيله', danger: true, icon: 'trash' })) return;
   s.entries.splice(k, 1);
   if (!s.entries.length) S.sessions.splice(idx, 1);   // ما ضل فيه شي
   save(); render();
@@ -930,15 +990,18 @@ function backup() {
 function restore(inp) {
   const f = inp.files[0]; if (!f) return; inp.value = '';
   const r = new FileReader();
-  r.onload = () => {
+  r.onload = async () => {
+    let d;
     try {
-      const d = JSON.parse(r.result);
+      d = JSON.parse(r.result);
       if (!Array.isArray(d.sessions)) throw 0;
-      if (!confirm('سيتم استبدال بياناتك الحالية. متابعة؟')) return;
-      S = Object.assign({ sessions: [], active: null, notes: {}, body: [], diet: null, meals: [] }, d);
-      seedInBody();
-      save(); render(true); msg('✅ تم الاسترجاع');
-    } catch (e) { msg('الملف غير صالح'); }
+    } catch (e) { return msg('الملف غير صالح'); }
+    if (!await sure('تستبدل بياناتك الحالية؟', {
+      body: 'كل تمارينك وقياساتك الموجودة هلأ رح تنمحي ويحلّ محلّها اللي بهذا الملف.',
+      ok: 'استبدل', no: 'لا، خلّيها', danger: true, icon: 'swap' })) return;
+    S = Object.assign({ sessions: [], active: null, notes: {}, body: [], diet: null, meals: [] }, d);
+    seedInBody();
+    save(); render(true); msg('✅ تم الاسترجاع');
   };
   r.readAsText(f);
 }
@@ -1236,9 +1299,10 @@ function seedInBody() {
   save();
 }
 
-function delBody(idx) {
+async function delBody(idx) {
   const entry = sortedBody()[idx]; if (!entry) return;
-  if (!confirm(`حذف قياس ${fmt(entry.date)} (${n1(entry.weight)} كغم)؟`)) return;
+  if (!await sure('تحذف هذا القياس؟', { body: `${fmt(entry.date)} · ${n1(entry.weight)} كغم`,
+    ok: 'احذف', danger: true, icon: 'trash' })) return;
   const real = S.body.indexOf(entry);
   if (real >= 0) S.body.splice(real, 1);
   save(); render();
@@ -1543,9 +1607,10 @@ async function attachMeal(inp) {
   } catch (e) { msg(arErr(e.message)); }
   mealBusy = false; mealPendingImg = null; render();
 }
-function delMeal(date, idx) {
+async function delMeal(date, idx) {
   const list = sortedMeals(date); const m = list[idx]; if (!m) return;
-  if (!confirm(`حذف «${m.label}»؟`)) return;
+  if (!await sure('تحذف هاي الوجبة؟', { body: `${m.label} · ${m.kcal} سعرة`,
+    ok: 'احذف', danger: true, icon: 'trash' })) return;
   const real = S.meals.indexOf(m);
   if (real >= 0) S.meals.splice(real, 1);
   save(); render();

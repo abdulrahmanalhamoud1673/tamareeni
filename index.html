@@ -27,6 +27,7 @@
   --good:#2e8b2e; --warn:#b4700a;          /* دلالات: تطوّر / انتبه */
   --food:#0f9488;                          /* لون ميزة الأكل */
   --d1:#e2483f; --d2:#7f56e0; --d3:#d08700; --d4:#0f9d63;  /* لون كل يوم تمرين */
+  --dng:#d92d20; --dng-fg:#ffffff;         /* الأفعال اللي ما بترجع: حذف/إلغاء */
   --vio:#12a594; --navbg:rgba(255,255,255,.84); --navon:var(--acc);  /* الشريط السفلي العائم */
   --r:18px;                                     /* انحناء موحّد لكل البطاقات */
   --card:#ffffff;                               /* خلفية البطاقة */
@@ -38,6 +39,7 @@
     --acc:#c2f04b; --accf:#c2f04b; --acc-fg:#101806;
     --good:#4ade80; --warn:#fbbf24; --food:#2dd4bf;
     --d1:#fb7185; --d2:#a78bfa; --d3:#fbbf24; --d4:#34d399;
+    --dng:#fb7185; --dng-fg:#3d0a11;
     --vio:#2ee6b6; --navbg:rgba(17,21,15,.82); --navon:#ffffff;
     --card:#131811; --sh:0 1px 0 rgba(255,255,255,.04) inset, 0 16px 34px -26px #000;
   }
@@ -249,11 +251,6 @@ header .streak{color:var(--acc);font-weight:600}
 header h1.dlbl{gap:9px}
 header h1.dlbl .dicon svg{width:21px;height:21px}
 
-/* شريط تقدّم الجلسة تحت ترويسة التمرين */
-.wprog{height:3px;border-radius:99px;background:var(--line);overflow:hidden;margin:2px 0 6px}
-.wprog i{display:block;height:100%;border-radius:99px;background:var(--dc,var(--acc));
-  transition:width .45s cubic-bezier(.3,1.2,.5,1)}
-
 /* ---------- التمرين ---------- */
 /* كل تمرين ببطاقة مستقلة بدل خطوط فاصلة */
 .ex{position:relative;padding:16px 16px 10px;margin-bottom:12px;border:1px solid var(--line);
@@ -334,6 +331,55 @@ header h1.dlbl .dicon svg{width:21px;height:21px}
 .photobtns{display:flex;gap:10px;margin-top:28px}
 .photobtns .btn{flex:1;width:auto;margin-top:0}
 
+/* ---------- نافذة تأكيد داخل التطبيق (بديل confirm الجاهز) ---------- */
+#sheet{position:fixed;inset:0;z-index:60;display:none;align-items:center;justify-content:center;padding:24px;
+  background:color-mix(in srgb,#05070a 55%,transparent);
+  -webkit-backdrop-filter:blur(5px);backdrop-filter:blur(5px);opacity:0;transition:opacity .2s ease}
+#sheet.show{display:flex}
+body.locked{overflow:hidden}
+#sheet.on{opacity:1}
+.shcard{width:100%;max-width:370px;text-align:center;padding:26px 22px 20px;
+  background:var(--card);border:1px solid var(--line);border-radius:26px;
+  box-shadow:0 34px 80px -26px rgba(0,0,0,.6);
+  transform:translateY(20px) scale(.95);transition:transform .28s cubic-bezier(.22,1.15,.36,1)}
+#sheet.on .shcard{transform:none}
+.shic{width:54px;height:54px;margin:0 auto 15px;border-radius:19px;display:grid;place-items:center;
+  color:var(--acc);background:color-mix(in srgb,currentColor 14%,transparent)}
+.shic svg{width:26px;height:26px;display:block}
+.shic.bad{color:var(--d1)}
+.shcard h3{margin:0;font-size:18.5px;font-weight:700;letter-spacing:-.3px;line-height:1.4}
+.shcard p{margin:8px 0 0;color:var(--mut);font-size:14px;line-height:1.65}
+.shbtns{display:grid;gap:9px;margin-top:22px}
+.shbtns .btn{margin-top:0;padding:15px;font-size:16px}
+.btn.danger{background:var(--dng);color:var(--dng-fg);
+  box-shadow:0 10px 24px -12px color-mix(in srgb,var(--dng) 85%,transparent)}
+
+/* ---------- ترويسة صفحة التمرين ---------- */
+.whead{align-items:flex-start}
+.wring{position:relative;width:46px;height:46px;flex:none;display:grid;place-items:center;color:var(--dc,var(--acc))}
+.wring::before{content:'';position:absolute;inset:5px;border-radius:50%;
+  background:color-mix(in srgb,currentColor 12%,transparent)}
+.wring svg.rg{position:absolute;inset:0;width:46px;height:46px;transform:rotate(-90deg)}
+.wring .rg .tr{stroke:color-mix(in srgb,currentColor 20%,transparent)}
+.wring .rg .bar{stroke:currentColor;transition:stroke-dasharray .5s cubic-bezier(.3,1.1,.5,1)}
+.wring .dicon{position:relative}
+.wring .dicon svg{width:20px;height:20px}
+header h1.wtitle{font-size:19px;letter-spacing:-.3px}
+.wmeta{display:flex;align-items:center;gap:6px;margin-top:6px}
+.wchip{display:inline-flex;align-items:center;gap:4px;padding:4px 8px;border-radius:99px;white-space:nowrap;
+  font-size:11.5px;line-height:1;background:color-mix(in srgb,var(--mut) 12%,transparent);color:var(--mut)}
+.wchip svg{width:12px;height:12px;flex:none}
+.wchip b{font-weight:700;font-variant-numeric:tabular-nums;direction:ltr;color:var(--tx)}
+.wchip.tm{color:var(--dc,var(--acc));background:color-mix(in srgb,currentColor 13%,transparent)}
+.wchip.tm b{color:inherit;font-size:13.5px}
+.wfin{flex:none;align-self:center;border:0;border-radius:99px;padding:11px 19px;font-size:15px;font-weight:700;
+  color:var(--acc-fg);background:var(--accf);
+  box-shadow:0 10px 22px -12px color-mix(in srgb,var(--acc) 90%,transparent);
+  transition:transform .15s ease}
+.wfin:active{transform:scale(.96)}
+.wcancel{display:block;width:100%;margin-top:22px;background:none;border:0;padding:14px;
+  font-size:14.5px;color:var(--dng);opacity:.85}
+
 /* ---------- مؤقت الراحة ---------- */
 /* نفس لغة الشريط السفلي: بطاقة عائمة زجاجية */
 #rest{position:fixed;z-index:20;left:50%;bottom:calc(10px + env(safe-area-inset-bottom));
@@ -349,7 +395,8 @@ header h1.dlbl .dicon svg{width:21px;height:21px}
   -webkit-mask-composite:xor;mask-composite:exclude}
 #rest .in{max-width:560px;margin:0 auto;display:flex;align-items:center;gap:16px}
 #rest .t{font-size:26px;font-weight:600;font-variant-numeric:tabular-nums;min-width:74px}
-#rest .c{color:var(--mut);font-size:14px;flex:1}
+#rest .c{color:var(--mut);font-size:14px;flex:1;display:flex;align-items:center;gap:7px}
+#rest .c svg{width:16px;height:16px;flex:none}
 #rest button{background:none;border:1px solid var(--line);border-radius:9px;padding:9px 15px;font-size:15px;color:var(--mut)}
 #track{height:2px;background:var(--line);margin-top:12px;max-width:560px;margin-inline:auto}
 #track i{display:block;height:100%;background:var(--acc);transition:width 1s linear}
@@ -590,7 +637,8 @@ header h1.dlbl .dicon svg{width:21px;height:21px}
 <div id="rest">
   <div class="in">
     <div class="t" id="restNum">0:00</div>
-    <div class="c">⏱️ راحة</div>
+    <div class="c"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+      stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2M9 2h6"/></svg>راحة</div>
     <button onclick="restAdd(30)">+٣٠ ث</button>
     <button onclick="restSkip()">تخطّي</button>
   </div>
@@ -598,6 +646,7 @@ header h1.dlbl .dicon svg{width:21px;height:21px}
 </div>
 <div id="photo" onclick="if(event.target.id==='photo')closePic()"></div>
 <div id="msg"></div>
+<div id="sheet" onclick="if(event.target.id==='sheet')sheetNo()"></div>
 
 <nav id="tabbar"></nav>
 
