@@ -1,17 +1,37 @@
 name: تنبيهات تماريني
 
-# بيشتغل كل ١٠ دقايق. كرون GitHub ما بيضبط بالدقيقة (بيتأخّر)، عشان هيك
-# notify.js بيشتغل بنوافذ وبيتذكّر شو بعت بـ push/state.json فما يكرّر.
+# ليش مش كرون عادي: جرّبنا "*/10 * * * *" و GitHub خنقه لمرة كل ساعتين لأربع
+# ساعات — يعني تذكير الحصة كان بيضيع. فبدلها كل تشغيلة بتحجز اللي بعدها، واللي
+# بعدها بتستنى ١٠ دقايق بـ environment فيه wait timer (استنى بلا ما يشتغل رَنَر).
+# والكرون كل ساعة ضل موجود كاحتياطي بس، يرجّع السلسلة إذا انقطعت.
 on:
   schedule:
-    - cron: "*/10 * * * *"
+    - cron: "23 * * * *"
   workflow_dispatch:
+    inputs:
+      chained:
+        description: "محجوزة من التشغيلة اللي قبلها (بتستنى ١٠ دقايق أول)"
+        type: boolean
+        default: false
+  push:
+    branches: [main]
+    paths: [".github/workflows/notify.yml", "push/notify.js"]
 
 permissions:
   contents: write
+  actions: write
 
 jobs:
-  notify:
+  wait:
+    if: ${{ inputs.chained }}
+    runs-on: ubuntu-latest
+    environment: every-10-min
+    steps:
+      - run: echo "مرّت ١٠ دقايق على آخر فحص"
+
+  send:
+    needs: wait
+    if: ${{ !cancelled() }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
     concurrency: tamareeni-notify
@@ -39,3 +59,20 @@ jobs:
             git commit -q -m "تنبيهات: تذكّر شو انبعث"
             git pull -q --rebase -X theirs && git push -q
           fi
+      - name: احجز التشغيلة الجاية
+        if: ${{ always() }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # بلا wait timer السلسلة بتصير تشغيلات ورا بعض بلا وقفة — نوقف ونخلّيها للكرون
+          wait=$(gh api "repos/$GITHUB_REPOSITORY/environments/every-10-min" \
+                   --jq '[.protection_rules[]? | select(.type == "wait_timer") | .wait_timer][0] // 0' || echo 0)
+          if [ "${wait:-0}" -lt 3 ]; then echo "ما في wait timer — بنسيبها للكرون"; exit 0; fi
+          queued=$(gh run list -R "$GITHUB_REPOSITORY" -w notify.yml -L 20 --json databaseId,status \
+                     --jq "[.[] | select(.databaseId != $GITHUB_RUN_ID) | select(.status == \"waiting\" or .status == \"queued\" or .status == \"pending\" or .status == \"requested\")] | length")
+          if [ "${queued:-0}" -gt 0 ]; then echo "في وحدة محجوزة أصلاً"; exit 0; fi
+          for i in 1 2 3; do
+            gh workflow run notify.yml -R "$GITHUB_REPOSITORY" -f chained=true && exit 0
+            sleep 15
+          done
+          exit 1
